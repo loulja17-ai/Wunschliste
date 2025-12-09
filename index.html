@@ -1,1005 +1,976 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="de">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2487.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #4689cc; -webkit-text-stroke: #4689cc}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #8cd3fe; -webkit-text-stroke: #8cd3fe}
-    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #c27e65; -webkit-text-stroke: #c27e65}
-    p.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #cacaca; -webkit-text-stroke: #cacaca}
-    p.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #cacaca; -webkit-text-stroke: #cacaca; min-height: 16.0px}
-    p.p6 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #6d7378; -webkit-text-stroke: #6d7378}
-    span.s1 {font-kerning: none; background-color: #171818}
-    span.s2 {font-kerning: none; color: #8cd3fe; background-color: #171818; -webkit-text-stroke: 0px #8cd3fe}
-    span.s3 {font-kerning: none; color: #6d6d6d; background-color: #171818; -webkit-text-stroke: 0px #6d6d6d}
-    span.s4 {font-kerning: none; color: #cacaca; background-color: #171818; -webkit-text-stroke: 0px #cacaca}
-    span.s5 {font-kerning: none; color: #c27e65; background-color: #171818; -webkit-text-stroke: 0px #c27e65}
-    span.s6 {font-kerning: none; color: #4689cc; background-color: #171818; -webkit-text-stroke: 0px #4689cc}
-    span.s7 {font-kerning: none}
-    span.s8 {font-kerning: none; color: #d4d4d4; background-color: #171818; -webkit-text-stroke: 0px #d4d4d4}
-    span.s9 {font-kerning: none; color: #a7c598; background-color: #171818; -webkit-text-stroke: 0px #a7c598}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WunschWelle - Wunschzettel App</title>
+    
+    <!-- 1. Tailwind CSS für das Design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Babel für React (JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 3. Import Map: Hier sagen wir dem Browser, wo er die Pakete findet -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.344.0",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+      }
+    }
+    </script>
+
+    <style>
+        /* Custom Scrollbar für die Listen */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        body {
+            background-color: #f8fafc; /* Slate-50 fallback */
+        }
+    </style>
 </head>
 <body>
-<p class="p1"><span class="s1">&lt;!DOCTYPE</span><span class="s2"> html</span><span class="s1">&gt;</span></p>
-<p class="p1"><span class="s3">&lt;</span><span class="s1">html</span><span class="s4"> </span><span class="s2">lang</span><span class="s3">=</span><span class="s5">"de"</span><span class="s3">&gt;</span></p>
-<p class="p1"><span class="s3">&lt;</span><span class="s1">head</span><span class="s3">&gt;</span></p>
-<p class="p2"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">meta</span><span class="s4"> </span><span class="s1">charset</span><span class="s3">=</span><span class="s5">"UTF-8"</span><span class="s3">&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">meta</span><span class="s4"> </span><span class="s2">name</span><span class="s3">=</span><span class="s1">"viewport"</span><span class="s4"> </span><span class="s2">content</span><span class="s3">=</span><span class="s1">"width=device-width, initial-scale=1.0"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">title</span><span class="s3">&gt;</span><span class="s1">WunschWelle - Wunschzettel App</span><span class="s3">&lt;/</span><span class="s6">title</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span></span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s1">&lt;!-- 1. Tailwind CSS für das Design --&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">script</span><span class="s4"> </span><span class="s2">src</span><span class="s3">=</span><span class="s1">"https://cdn.tailwindcss.com"</span><span class="s3">&gt;&lt;/</span><span class="s6">script</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span></span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s1">&lt;!-- 2. Babel für React (JSX) --&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">script</span><span class="s4"> </span><span class="s2">src</span><span class="s3">=</span><span class="s1">"https://unpkg.com/@babel/standalone/babel.min.js"</span><span class="s3">&gt;&lt;/</span><span class="s6">script</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s1">&lt;!-- 3. Import Map: Hier sagen wir dem Browser, wo er die Pakete findet --&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">script</span><span class="s4"> </span><span class="s2">type</span><span class="s3">=</span><span class="s1">"importmap"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">    </span>{</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">      </span>"imports": {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>"react": "https://esm.sh/react@18.2.0",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>"react-dom/client": "https://esm.sh/react-dom@18.2.0/client",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>"lucide-react": "https://esm.sh/lucide-react@0.344.0",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>"firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>"firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>"firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;/</span><span class="s1">script</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s1">style</span><span class="s3">&gt;</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">/* Custom Scrollbar für die Listen */</span></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">.custom-scrollbar::-webkit-scrollbar</span><span class="s4"> </span><span class="s8">{</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s2">width:</span><span class="s1"> </span><span class="s9">4px</span><span class="s8">;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s8">}</span></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">.custom-scrollbar::-webkit-scrollbar-track</span><span class="s4"> </span><span class="s8">{</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s2">background:</span><span class="s1"> #f1f1f1</span><span class="s8">;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s8">}</span></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">.custom-scrollbar::-webkit-scrollbar-thumb</span><span class="s4"> </span><span class="s8">{</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s2">background:</span><span class="s1"> #cbd5e1</span><span class="s8">;</span></p>
-<p class="p2"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s1">border-radius:</span><span class="s4"> </span><span class="s9">4px</span><span class="s8">;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s8">}</span></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">.custom-scrollbar::-webkit-scrollbar-thumb:hover</span><span class="s4"> </span><span class="s8">{</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s2">background:</span><span class="s1"> #94a3b8</span><span class="s8">;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s8">}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s6">body</span><span class="s1"> </span><span class="s8">{</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s2">background-color:</span><span class="s4"> #f8fafc</span><span class="s8">;</span><span class="s4"> </span><span class="s1">/* Slate-50 fallback */</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s8">}</span></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;/</span><span class="s1">style</span><span class="s3">&gt;</span></p>
-<p class="p1"><span class="s3">&lt;/</span><span class="s1">head</span><span class="s3">&gt;</span></p>
-<p class="p1"><span class="s3">&lt;</span><span class="s1">body</span><span class="s3">&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"root"</span><span class="s3">&gt;&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s1">&lt;!-- 4. Der eigentliche App Code --&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">script</span><span class="s4"> </span><span class="s2">type</span><span class="s3">=</span><span class="s1">"text/babel"</span><span class="s4"> </span><span class="s2">data-type</span><span class="s3">=</span><span class="s1">"module"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>import React, { useState, useEffect } from 'react';</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>import { createRoot } from 'react-dom/client';</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>import {<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>Plus, Trash2, Gift, MessageCircle, CheckCircle,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>Share2, Lock, EyeOff, Users, Send, Sparkles,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>LogIn, LogOut, User, Shield, PieChart, Mail, Key,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>AlertTriangle, Info, Copy, Check, Link as LinkIcon,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>} from 'lucide-react';</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>import { initializeApp } from 'firebase/app';</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>import {<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>getAuth,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>signInAnonymously,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>signInWithCustomToken,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>onAuthStateChanged,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>createUserWithEmailAndPassword,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>signInWithEmailAndPassword,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>signOut,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>sendEmailVerification</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>} from 'firebase/auth';</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>import {<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>getFirestore,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>collection,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>addDoc,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>onSnapshot,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>doc,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>updateDoc,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>deleteDoc,<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>serverTimestamp,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>getDoc,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>arrayUnion,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>arrayRemove</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>} from 'firebase/firestore';</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>// --- FIREBASE KONFIGURATION ---</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const firebaseConfig = {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>apiKey: "AIzaSyAHbZj73RUzb9HzXfaaZXU4E03CV14KfYo",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>authDomain: "wunschliste-f6271.firebaseapp.com",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>projectId: "wunschliste-f6271",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>storageBucket: "wunschliste-f6271.firebasestorage.app",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>messagingSenderId: "802607999884",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>appId: "1:802607999884:web:f7cef06a2da60d0ace44a9",</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>measurementId: "G-4NHT3SRWES"</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>// Initialisierung</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const app = initializeApp(firebaseConfig);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const auth = getAuth(app);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const db = getFirestore(app);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>// App ID für Firestore Pfade (Fallback)</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const appId = 'wunschliste-live-app';</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>// --- HELPER: SAFE URL UPDATE ---</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const safeUpdateURL = (param) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const url = param ? `?list=${param}` : window.location.pathname;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>// Wir prüfen, ob wir history nutzen dürfen (in manchen Sandboxes verboten)</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>window.history.pushState({}, '', url);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>console.warn("URL Update suppressed:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>// --- HELPER: SORTING ---</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const sortByDateDesc = (a, b) =&gt; (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const sortByDateAsc = (a, b) =&gt; (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>// --- COMPONENTS ---</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onToggleReservation, onToggleBought }) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const isContributer = item.contributors?.some(c =&gt; c.uid === currentUserUid);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const contributorCount = item.contributors?.length || 0;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const contributorNames = item.contributors?.map(c =&gt; c.name).join(', ');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const isGroupMode = (item.contributors &amp;&amp; item.contributors.length &gt; 0) || item.isGroupGift;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const isReservedByMe = item.reservedBy?.uid === currentUserUid;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const isReserved = !!item.reservedBy;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const isFullyReserved = isReserved &amp;&amp; !isGroupMode;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className={`bg-white border rounded-xl p-4 transition-all shadow-sm hover:shadow-md mb-3 ${</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>item.isSecret ? 'border-amber-200 bg-amber-50/50' :<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>item.isBought ? 'border-emerald-200 bg-emerald-50/40' :</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}`}&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex justify-between items-start mb-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex-1"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex flex-wrap gap-2 mb-1"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{item.isSecret &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;Sparkles size={10} /&gt; Überraschung</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{isGroupMode &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;PieChart size={10} /&gt; Sammelgeschenk</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{item.isBought &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;ShoppingBag size={10} /&gt; Bereits Gekauft</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved &amp;&amp; currentMode === 'guest' &amp;&amp; !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{item.title}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/h3&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{item.price &amp;&amp; &lt;span&gt;{item.price}&lt;/span&gt;}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{item.link &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;a href={item.link} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline flex items-center gap-1"&gt;Link öffnen &amp;rarr;&lt;/a&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{currentMode === 'owner' &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={() =&gt; onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;Trash2 size={16} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>{currentMode === 'guest' &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2"&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{isGroupMode ? (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex items-center justify-between gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="text-sm flex-1"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="text-blue-600 flex flex-wrap gap-1 items-center"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;Users size={12} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;span&gt;{contributorCount} {contributorCount === 1 ? 'macht' : 'machen'} mit:&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;span className="font-semibold text-slate-700 text-xs"&gt;{contributorNames}&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>{isContributer &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>onClick={() =&gt; onToggleBought(item)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>title={item.isBought ? "Als nicht gekauft markieren" : "Als gekauft markieren"}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;ShoppingBag size={16} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>onClick={() =&gt; onToggleReservation(item, 'group')}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>isContributer<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>: 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>}`}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>{isContributer ? 'Verlassen' : 'Beteiligen'}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>) : isReserved ? (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex items-center justify-between gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex items-center gap-2 text-sm"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;span className={`flex items-center justify-center w-6 h-6 rounded-full ${item.isBought ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-600'}`}&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>{item.isBought ? &lt;Check size={12} /&gt; : &lt;Lock size={12} /&gt;}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;span className="text-slate-500"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>{item.isBought ? 'Gekauft von:' : 'Reserviert:'} &lt;span className="font-semibold text-slate-700"&gt;{isReservedByMe ? 'Du' : item.reservedBy.name}&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{isReservedByMe &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="flex gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>onClick={() =&gt; onToggleBought(item)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>item.isBought<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>? 'bg-emerald-100 text-emerald-700 border border-emerald-200'<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>: 'bg-white border border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-600'</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>}`}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>{item.isBought ? 'Erledigt' : 'Kaufen?'}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;button</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>onClick={() =&gt; onToggleReservation(item, 'single')}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>Freigeben</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>) : (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>onClick={() =&gt; onToggleReservation(item, 'single')}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;CheckCircle size={14} /&gt; Reservieren</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>onClick={() =&gt; onToggleReservation(item, 'group')}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;PieChart size={14} /&gt; Sammeln</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const ChatArea = ({ messages, guestName, onSend, currentUserUid }) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [newMessage, setNewMessage] = useState('');</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleSend = () =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!newMessage.trim()) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>onSend(newMessage);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setNewMessage('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex flex-col h-full pt-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="bg-amber-50 border border-amber-100 p-3 rounded-lg mb-4 text-xs text-amber-800 flex gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;EyeOff size={16} className="shrink-0" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div&gt;&lt;strong&gt;Pssst!&lt;/strong&gt; Ersteller sieht das nicht.&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex-1 space-y-3 mb-4 overflow-y-auto max-h-[50vh]"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{messages.length === 0 &amp;&amp; &lt;div className="text-center text-slate-400 text-sm mt-8"&gt;Keine Nachrichten.&lt;/div&gt;}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{messages.map(msg =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const isMe = msg.uid === currentUserUid || msg.sender === guestName;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-emerald-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>{msg.text}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="text-[10px] text-slate-400 mt-1 px-1"&gt;{msg.sender}&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>})}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="sticky bottom-0 bg-white p-2 border-t flex gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;input value={newMessage} onChange={(e) =&gt; setNewMessage(e.target.value)} placeholder="Nachricht..." className="flex-1 px-4 py-2 bg-slate-100 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" onKeyDown={(e) =&gt; e.key === 'Enter' &amp;&amp; handleSend()} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={handleSend} className="p-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700"&gt;&lt;Send size={18} /&gt;&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const AddItemInput = ({ currentMode, onAdd }) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [text, setText] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [price, setPrice] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [link, setLink] = useState('');</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleAdd = () =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if(!text) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>onAdd({</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>title: text, price, link,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>isSecret: currentMode === 'guest'</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setText(''); setPrice(''); setLink('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="sticky bottom-0 bg-white/90 backdrop-blur-md p-4 border-t border-slate-100 shadow-lg"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex flex-col gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex gap-2 items-center"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;input value={text} onChange={(e) =&gt; setText(e.target.value)} placeholder={currentMode === 'owner' ? "Neuer Wunsch..." : "Überraschungs-Idee..."} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={handleAdd} disabled={!text} className={`p-3 rounded-xl text-white shadow-lg transform active:scale-95 transition-all ${currentMode === 'owner' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-200'}`}&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{currentMode === 'owner' ? &lt;Plus size={24} /&gt; : &lt;Sparkles size={24} /&gt;}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{currentMode === 'owner' &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex gap-2 items-center text-xs animate-in slide-in-from-bottom-2 fade-in duration-300"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input value={price} onChange={(e) =&gt; setPrice(e.target.value)} placeholder="Preis (opt)" className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input value={link} onChange={(e) =&gt; setLink(e.target.value)} placeholder="Link (opt)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [email, setEmail] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [password, setPassword] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [isRegister, setIsRegister] = useState(false);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [error, setError] = useState(null);<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [currentDomain, setCurrentDomain] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [verificationSent, setVerificationSent] = useState(false);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (typeof window !== 'undefined') {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setCurrentDomain(window.location.hostname);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}, []);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (isOpen) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setVerificationSent(false);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setError(null);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}, [isOpen]);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>if (!isOpen) return null;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleSubmit = async (e) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>e.preventDefault();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setError(null);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (isRegister) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const userCredential = await onRegister(email, password);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>await sendEmailVerification(userCredential.user);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>await signOut(auth);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setVerificationSent(true);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} else {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const userCredential = await onLogin(email, password);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>if (!userCredential.user.emailVerified) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>await signOut(auth);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setError({ msg: "Bitte bestätige erst deine E-Mail-Adresse!", code: 'auth/unverified-email' });</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>onClose();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (err) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>let msg = `Fehler: ${err.message}`;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (err.code === 'auth/invalid-credential') msg = "E-Mail oder Passwort falsch.";<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setError({ msg, code: err.code });</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>if (verificationSent) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl text-center"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"&gt;&lt;Mail size={32} /&gt;&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;h2 className="text-2xl font-bold mb-2 text-slate-800"&gt;Fast geschafft!&lt;/h2&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;p className="text-slate-600 mb-6"&gt;Wir haben eine Bestätigungs-E-Mail an &lt;strong&gt;{email}&lt;/strong&gt; gesendet. Bitte klicke auf den Link darin.&lt;/p&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={() =&gt; { setVerificationSent(false); setIsRegister(false); }} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors"&gt;Zurück zum Login&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"&gt;✕&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;h2 className="text-xl font-bold mb-1"&gt;{isRegister ? 'Konto erstellen' : 'Anmelden'}&lt;/h2&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;p className="text-slate-500 text-sm mb-4"&gt;{isRegister ? 'Zum dauerhaften Speichern deiner Listen.' : 'Willkommen zurück!'}&lt;/p&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{error &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-red-50 border border-red-100 text-red-600 text-xs p-3 rounded-lg mb-4 font-bold"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{error.msg}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;form onSubmit={handleSubmit} className="space-y-3"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="relative"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;Mail className="absolute left-3 top-3 text-slate-400" size={16} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input type="email" value={email} onChange={e =&gt; setEmail(e.target.value)} placeholder="E-Mail Adresse" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="relative"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;Key className="absolute left-3 top-3 text-slate-400" size={16} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input type="password" value={password} onChange={e =&gt; setPassword(e.target.value)} placeholder="Passwort" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required minLength={6} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200"&gt;{isRegister ? 'Kostenlos registrieren' : 'Einloggen'}&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/form&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="mt-4 text-center text-sm text-slate-500"&gt;{isRegister ? 'Schon ein Konto?' : 'Noch kein Konto?'} &lt;button onClick={() =&gt; setIsRegister(!isRegister)} className="ml-1 text-indigo-600 font-semibold hover:underline"&gt;{isRegister ? 'Hier einloggen' : 'Jetzt registrieren'} &lt;/button&gt;&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>function InviteScreen({ listData, onJoin }) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [joinName, setJoinName] = useState('');</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex flex-col items-center justify-center min-h-screen p-4 bg-slate-50"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-emerald-600 p-8 text-center text-white"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;Gift className="w-12 h-12 mx-auto mb-3 text-emerald-100" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;h2 className="text-xl font-medium text-emerald-100 mb-1"&gt;Du bist eingeladen zu&lt;/h2&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;h1 className="text-3xl font-bold"&gt;{listData.title}&lt;/h1&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;p className="text-sm opacity-80 mt-2"&gt;{listData.eventDate &amp;&amp; new Date(listData.eventDate).toLocaleDateString('de-DE')}&lt;/p&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="p-8 space-y-4"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;p className="text-center text-slate-600 text-sm"&gt;Bitte gib deinen Namen ein, um die Wunschliste zu sehen und Geschenke zu reservieren.&lt;/p&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;input<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>type="text"<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>value={joinName}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onChange={(e) =&gt; setJoinName(e.target.value)}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>placeholder="Dein Name"<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-center text-lg"<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>autoFocus</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>/&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>disabled={!joinName}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onClick={() =&gt; onJoin(listData.id, joinName)}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-emerald-200"</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>Liste öffnen &amp;rarr;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>function LandingPage({ onCreate, onJoin, user, onLogin, onRegister, onLogout, myLists, onOpenList, onDeleteList }) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [title, setTitle] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [date, setDate] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [joinId, setJoinId] = useState('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [showAuthModal, setShowAuthModal] = useState(false);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [showJoinInput, setShowJoinInput] = useState(false);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex flex-col min-h-screen bg-slate-50 relative"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;AuthModal isOpen={showAuthModal} onClose={() =&gt; setShowAuthModal(false)} onLogin={onLogin} onRegister={onRegister} /&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>{/* Header */}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="bg-white/80 backdrop-blur sticky top-0 z-20 border-b border-slate-200 p-4 flex justify-between items-center"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex items-center gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-indigo-600 p-1.5 rounded-lg text-white"&gt;&lt;Gift size={18} /&gt;&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;h1 className="font-bold text-slate-800 tracking-tight"&gt;WunschWelle&lt;/h1&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{!user || user.isAnonymous ? (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={() =&gt; setShowAuthModal(true)} className="text-sm font-medium text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>Anmelden</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>) : (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex items-center gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="text-xs text-slate-500 hidden sm:inline"&gt;{user.email}&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button onClick={onLogout} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"&gt;&lt;LogOut size={16} /&gt;&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex-1 p-4 max-w-md mx-auto w-full flex flex-col"&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{/* --- SECTION 1: CREATE NEW --- */}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="bg-indigo-600 p-6 text-white text-center"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h2 className="text-2xl font-bold mb-2"&gt;Wünsche erfüllen.&lt;/h2&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p className="text-indigo-100 text-sm"&gt;Erstelle deine Liste und teile sie mit Freunden.&lt;/p&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="p-6 space-y-4"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider"&gt;Titel&lt;/label&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input type="text" value={title} onChange={(e) =&gt; setTitle(e.target.value)} placeholder="z.B. Mein Geburtstag" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider"&gt;Wann?&lt;/label&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input type="date" value={date} onChange={(e) =&gt; setDate(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button disabled={!title} onClick={() =&gt; onCreate(title, date)} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;Plus size={20} /&gt; Liste starten</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{/* --- SECTION 2: MY LISTS --- */}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{user &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;List size={16} className="text-indigo-500" /&gt; Deine Listen</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/h3&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                        </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{(!myLists || myLists.length === 0) ? (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;p className="text-slate-400 text-sm mb-1"&gt;Noch keine Listen erstellt.&lt;/p&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>) : (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div className="space-y-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>{myLists.map(list =&gt; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div key={list.id} onClick={() =&gt; onOpenList(list)} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer flex items-center justify-between group"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div className="font-bold text-slate-800"&gt;{list.title}&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;div className="text-xs text-slate-400 mt-1 flex items-center gap-1"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;Calendar size={10} /&gt; {list.eventDate ? new Date(list.eventDate).toLocaleDateString('de-DE') : 'Kein Datum'}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div className="flex items-center gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;button onClick={(e) =&gt; { e.stopPropagation(); onDeleteList(list.id); }} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"&gt;&lt;Trash2 size={16} /&gt;&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;ChevronRight size={20} className="text-slate-300" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>))}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{/* --- SECTION 3: JOIN MANUALLY --- */}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="mt-auto pt-8 text-center pb-8"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{!showJoinInput ? (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button onClick={() =&gt; setShowJoinInput(true)} className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1 mx-auto transition-colors"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;Search size={14} /&gt; Code eingeben?</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>) : (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input type="text" value={joinId} onChange={(e) =&gt; setJoinId(e.target.value)} placeholder="Code..." className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-indigo-500" autoFocus /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button disabled={!joinId} onClick={() =&gt; onJoin(joinId, "Gast")} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50"&gt;&lt;ArrowRight size={16} /&gt;&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>function WishListDashboard({ listData, mode, guestName, onBack, user }) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [items, setItems] = useState([]);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [messages, setMessages] = useState([]);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [activeTab, setActiveTab] = useState('wishes');</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>// --- REAL FIRESTORE LISTENERS ---</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!listData?.id) return;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>// 1. ITEMS LISTENER</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const unsubItems = onSnapshot(itemsRef, (snapshot) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const loadedItems = snapshot.docs.map(doc =&gt; ({ id: doc.id, ...doc.data() }));</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>loadedItems.sort(sortByDateDesc);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setItems(loadedItems);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}, (error) =&gt; console.error("Items Error:", error));</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>// 2. CHAT LISTENER</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const chatRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const unsubChat = onSnapshot(chatRef, (snapshot) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const loadedMsgs = snapshot.docs.map(doc =&gt; ({ id: doc.id, ...doc.data() }));</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>loadedMsgs.sort(sortByDateAsc); // Chat needs ASC order</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setMessages(loadedMsgs);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}, (error) =&gt; console.error("Chat Error:", error));</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return () =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>unsubItems();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>unsubChat();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>};</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}, [listData]);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>// --- ACTIONS ---</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleAddItem = async (newItem) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`), {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>...newItem,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>createdAt: serverTimestamp(),</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>contributors: [],</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>reservedBy: null,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>addedBy: mode === 'guest' ? guestName : 'Owner'</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>console.error("Add Item Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>alert("Fehler beim Hinzufügen.");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleDeleteItem = async (id) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, id));</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>console.error("Delete Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleToggleReservation = async (item, type = 'single') =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>// Check if guest name exists</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!guestName || guestName.trim() === '') {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>alert("Bitte gib zuerst deinen Namen an (Login oder Gast-Zugang).");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const userObj = { uid: user.uid, name: guestName };</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (type === 'group' || (item.contributors &amp;&amp; item.contributors.length &gt; 0)) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const hasJoined = item.contributors?.some(c =&gt; c.uid === user.uid);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>let newContributors = item.contributors || [];</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>if (hasJoined) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>newContributors = newContributors.filter(c =&gt; c.uid !== user.uid);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>} else {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>newContributors.push(userObj);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>await updateDoc(itemRef, {<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>contributors: newContributors,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>reservedBy: null<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>});</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} else {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const isReservedByMe = item.reservedBy?.uid === user.uid;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>if (item.reservedBy &amp;&amp; !isReservedByMe) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>alert("Bereits reserviert von " + item.reservedBy.name);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const newReservedBy = isReservedByMe ? null : userObj;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>await updateDoc(itemRef, { reservedBy: newReservedBy });</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>console.error("Reservation Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>alert("Konnte Reservierung nicht ändern. Bist du eingeloggt?");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleToggleBought = async (item) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>await updateDoc(itemRef, { isBought: !item.isBought });</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch(e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>console.error("Buying Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleSendMessage = async (text) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`), {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>text,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>sender: guestName,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>uid: user.uid, // Save UID for better identification</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>createdAt: serverTimestamp()</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>console.error("Send Msg Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const getDaysLeft = () =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!listData?.eventDate) return null;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const diff = new Date(listData.eventDate) - new Date();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return Math.ceil(diff / (1000 * 60 * 60 * 24));</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const daysLeft = getDaysLeft();</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const visibleItems = items.filter(item =&gt; mode === 'owner' ? !item.isSecret : true);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const totalItems = visibleItems.filter(i =&gt; !i.isSecret).length;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>// Done = Bought OR (Group &gt; 0)</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const doneItems = visibleItems.filter(i =&gt; !i.isSecret &amp;&amp; (item.isBought || (item.contributors &amp;&amp; item.contributors.length &gt; 0))).length;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const progress = totalItems &gt; 0 ? (doneItems / totalItems) * 100 : 0;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>// SHARE FUNCTION (SAFE)</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleShare = () =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const url = `${window.location.origin}${window.location.pathname}?list=${listData.id}`;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>navigator.clipboard.writeText(url);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>alert("Link in Zwischenablage kopiert!");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>alert("ID zum Teilen: " + listData.id);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative flex flex-col"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className={`${mode === 'owner' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white p-6 pb-12 rounded-b-3xl shadow-lg relative z-10 transition-colors duration-500`}&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex justify-between items-start mb-4"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={onBack} className="opacity-80 hover:opacity-100 text-sm flex items-center gap-1"&gt;&amp;larr; Zurück&lt;/button&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{/* USER INFO BADGE */}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="text-xs bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;User size={10} /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{mode === 'owner' ? 'Ersteller-Ansicht' : `Gast: ${guestName}`}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex justify-between items-end"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h1 className="text-2xl font-bold mb-1"&gt;{listData.title}&lt;/h1&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p className="opacity-90 text-sm flex items-center gap-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{listData.eventDate &amp;&amp; new Date(listData.eventDate).toLocaleDateString('de-DE')}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/p&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{daysLeft !== null &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center min-w-[70px]"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="block text-2xl font-bold leading-none"&gt;{daysLeft &gt; 0 ? daysLeft : 0}&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="text-[10px] uppercase tracking-wide opacity-80"&gt;Tage&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{/* SHARE LINK SECTION (OWNER ONLY) */}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{mode === 'owner' &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="mt-4 flex items-center gap-2 text-xs bg-indigo-800/50 p-2 rounded-lg border border-indigo-400/30"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;LinkIcon size={14} className="text-indigo-200" /&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;span className="truncate flex-1 text-indigo-100"&gt;Link zum Teilen bereit&lt;/span&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onClick={handleShare}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>className="bg-white text-indigo-700 px-3 py-1.5 rounded shadow-sm hover:bg-indigo-50 font-medium flex items-center gap-1"</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;Copy size={12} /&gt; Link kopieren</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{mode === 'guest' &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="mt-4"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="flex justify-between text-xs mb-1 opacity-90"&gt;&lt;span&gt;Geschenke-Fortschritt&lt;/span&gt;&lt;span&gt;{Math.round(progress)}%&lt;/span&gt;&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div className="h-2 bg-emerald-900/30 rounded-full overflow-hidden"&gt;&lt;div className="h-full bg-emerald-300 transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}&gt;&lt;/div&gt;&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>{mode === 'guest' &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="flex bg-slate-100 p-1 mx-4 -mt-6 rounded-xl relative z-20 shadow-sm mb-4"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={() =&gt; setActiveTab('wishes')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'wishes' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}&gt;&lt;Gift size={16} /&gt; Wünsche&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button onClick={() =&gt; setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'chat' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}&gt;&lt;MessageCircle size={16} /&gt; Lounge&lt;/button&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>)}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div className="flex-1 overflow-y-auto px-4 pb-20"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{(mode === 'owner' || (mode === 'guest' &amp;&amp; activeTab === 'wishes')) &amp;&amp; (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div className="space-y-4 pt-2"&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{visibleItems.length === 0 &amp;&amp; &lt;div className="text-center py-12 text-slate-400"&gt;&lt;Gift className="w-12 h-12 mx-auto mb-2 opacity-20" /&gt;&lt;p&gt;Noch keine Wünsche eingetragen.&lt;/p&gt;&lt;/div&gt;}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>{visibleItems.map(item =&gt; &lt;WishListItem key={item.id} item={item} mode={mode} currentUserUid={user?.uid} guestName={guestName} onDelete={handleDeleteItem} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} /&gt;)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>)}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>{mode === 'guest' &amp;&amp; activeTab === 'chat' &amp;&amp; &lt;ChatArea messages={messages} guestName={guestName} onSend={handleSendMessage} currentUserUid={user?.uid} /&gt;}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>{(mode === 'owner' || (mode === 'guest' &amp;&amp; activeTab === 'wishes')) &amp;&amp; &lt;AddItemInput currentMode={mode} onAdd={handleAddItem} /&gt;}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>// --- MAIN APP COMPONENT ---</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>function App() {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [user, setUser] = useState(null);<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [viewMode, setViewMode] = useState('landing');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [activeListData, setActiveListData] = useState(null);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [guestName, setGuestName] = useState(() =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try { return localStorage.getItem('wishlist_guest_name') || '' } catch(e) { return '' }</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [loading, setLoading] = useState(true);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const [userLists, setUserLists] = useState([]);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try { localStorage.setItem('wishlist_guest_name', guestName); } catch(e) {}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}, [guestName]);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const initAuth = async () =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const params = new URLSearchParams(window.location.search);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const listIdFromUrl = params.get('list');</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>// Prüfen ob schon eingeloggt</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>await new Promise(resolve =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>const unsub = onAuthStateChanged(auth, (u) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>unsub();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>resolve(u);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>});</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>if (!auth.currentUser) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>await signInAnonymously(auth);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>console.error("Auth Init Error", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>if (listIdFromUrl) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listIdFromUrl);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>const snap = await getDoc(docRef);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>if (snap.exists()) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>setActiveListData({ id: snap.id, ...snap.data() });</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                                </span>setViewMode('invite-screen');<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>} catch (e) { console.error("URL Load Error:", e); }</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setLoading(false);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>};</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>initAuth();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return onAuthStateChanged(auth, (u) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setUser(u);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>// Automatische Modus-Wahl basierend auf Ownership</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>if (u &amp;&amp; activeListData) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>if (u.uid === activeListData.ownerId) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>setViewMode('list-owner');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}, [activeListData?.id]);<span class="Apple-converted-space"> </span></span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>useEffect(() =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setUserLists([]);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const q = collection(db, 'artifacts', appId, 'public', 'data', 'lists');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>const unsubscribe = onSnapshot(q, (snapshot) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const allLists = snapshot.docs.map(doc =&gt; ({ id: doc.id, ...doc.data() }));</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const myLists = allLists.filter(l =&gt; l.ownerId === user.uid).sort(sortByDateDesc);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setUserLists(myLists);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return () =&gt; unsubscribe();</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}, [user]);</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleEmailLogin = (email, password) =&gt; signInWithEmailAndPassword(auth, email, password);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleRegister = (email, password) =&gt; createUserWithEmailAndPassword(auth, email, password);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleLogout = async () =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>await signOut(auth);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>await signInAnonymously(auth);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setViewMode('landing');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>safeUpdateURL('');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleCreateList = async (title, date) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!user) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'lists'), {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>title,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>eventDate: date,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>ownerId: user.uid,</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>createdAt: serverTimestamp()</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>});</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const newList = { id: docRef.id, title, eventDate: date, ownerId: user.uid };</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setActiveListData(newList);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setViewMode('list-owner');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>safeUpdateURL(docRef.id);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>console.error("Create List Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>alert("Fehler beim Erstellen der Liste.");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleJoinList = async (listId, name) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>const snap = await getDoc(docRef);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>if (snap.exists()) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>setActiveListData({ id: snap.id, ...snap.data() });</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>setGuestName(name);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>// Check ownership</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>if (user &amp;&amp; user.uid === snap.data().ownerId) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>setViewMode('list-owner');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>} else {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                            </span>setViewMode('list-guest');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>safeUpdateURL(snap.id);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>} else {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>alert("Liste nicht gefunden. Code überprüfen.");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>console.error("Join Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>alert("Fehler beim Beitreten.");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleOpenList = (list) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>setActiveListData(list);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (user &amp;&amp; list.ownerId === user.uid) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setViewMode('list-owner');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} else {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setViewMode('invite-screen');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>safeUpdateURL(list.id);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const handleDeleteList = async (listId) =&gt; {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>if (!confirm("Möchtest du diese Liste wirklich löschen?")) return;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>try {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId));</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>} catch (e) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>console.error("Delete List Error:", e);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>alert("Fehler beim Löschen.");</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>};</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>if (loading) return &lt;div className="h-screen flex items-center justify-center text-slate-400"&gt;Lade WunschWelle...&lt;/div&gt;;</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>if (viewMode === 'landing') {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return (</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;LandingPage<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onCreate={handleCreateList}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onJoin={handleJoinList}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>user={user}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onLogin={handleEmailLogin}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onRegister={handleRegister}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onLogout={handleLogout}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>myLists={userLists}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onOpenList={handleOpenList}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>onDeleteList={handleDeleteList}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>/&gt;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>);</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>if (viewMode === 'invite-screen') {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>return &lt;InviteScreen listData={activeListData} onJoin={(id, name) =&gt; {<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>setGuestName(name);<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>// Check again before setting mode</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>if (user &amp;&amp; activeListData &amp;&amp; user.uid === activeListData.ownerId) {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>setViewMode('list-owner');</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>} else {</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                        </span>setViewMode('list-guest');<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>}} /&gt;;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>// Fallback: If we are in list-owner or list-guest mode</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>const currentMode = (user &amp;&amp; activeListData &amp;&amp; user.uid === activeListData.ownerId) ? 'owner' : 'guest';</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>return &lt;WishListDashboard<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>listData={activeListData}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>mode={currentMode}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>guestName={guestName}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>user={user}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">                </span>onBack={() =&gt; { setViewMode('landing'); safeUpdateURL(''); }}<span class="Apple-converted-space"> </span></span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">            </span>/&gt;;</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p5"><span class="s7"></span><br></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>const root = createRoot(document.getElementById('root'));</span></p>
-<p class="p4"><span class="s1"><span class="Apple-converted-space">        </span>root.render(&lt;App /&gt;);</span></p>
-<p class="p1"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;/</span><span class="s1">script</span><span class="s3">&gt;</span></p>
-<p class="p1"><span class="s3">&lt;/</span><span class="s1">body</span><span class="s3">&gt;</span></p>
-<p class="p1"><span class="s3">&lt;/</span><span class="s1">html</span><span class="s3">&gt;</span></p>
+    <div id="root"></div>
+
+    <!-- 4. Der eigentliche App Code -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Plus, Trash2, Gift, MessageCircle, CheckCircle, 
+            Share2, Lock, EyeOff, Users, Send, Sparkles, 
+            LogIn, LogOut, User, Shield, PieChart, Mail, Key, 
+            AlertTriangle, Info, Copy, Check, Link as LinkIcon, 
+            ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight
+        } from 'lucide-react';
+        
+        import { initializeApp } from 'firebase/app';
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged, 
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            sendEmailVerification
+        } from 'firebase/auth';
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            onSnapshot, 
+            doc, 
+            updateDoc, 
+            deleteDoc, 
+            serverTimestamp,
+            getDoc,
+            arrayUnion,
+            arrayRemove
+        } from 'firebase/firestore';
+
+        // --- FIREBASE KONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHbZj73RUzb9HzXfaaZXU4E03CV14KfYo",
+            authDomain: "wunschliste-f6271.firebaseapp.com",
+            projectId: "wunschliste-f6271",
+            storageBucket: "wunschliste-f6271.firebasestorage.app",
+            messagingSenderId: "802607999884",
+            appId: "1:802607999884:web:f7cef06a2da60d0ace44a9",
+            measurementId: "G-4NHT3SRWES"
+        };
+
+        // Initialisierung
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // App ID für Firestore Pfade (Fallback)
+        const appId = 'wunschliste-live-app';
+
+        // --- HELPER: SAFE URL UPDATE ---
+        const safeUpdateURL = (param) => {
+            try {
+                const url = param ? `?list=${param}` : window.location.pathname;
+                // Wir prüfen, ob wir history nutzen dürfen (in manchen Sandboxes verboten)
+                window.history.pushState({}, '', url);
+            } catch (e) {
+                console.warn("URL Update suppressed:", e);
+            }
+        };
+
+        // --- HELPER: SORTING ---
+        const sortByDateDesc = (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        const sortByDateAsc = (a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+
+        // --- COMPONENTS ---
+
+        const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onToggleReservation, onToggleBought }) => {
+            const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
+            const contributorCount = item.contributors?.length || 0;
+            const contributorNames = item.contributors?.map(c => c.name).join(', ');
+            const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
+            const isReservedByMe = item.reservedBy?.uid === currentUserUid;
+            const isReserved = !!item.reservedBy;
+            const isFullyReserved = isReserved && !isGroupMode;
+            
+            return (
+                <div className={`bg-white border rounded-xl p-4 transition-all shadow-sm hover:shadow-md mb-3 ${
+                item.isSecret ? 'border-amber-200 bg-amber-50/50' : 
+                item.isBought ? 'border-emerald-200 bg-emerald-50/40' :
+                isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'
+                }`}>
+                <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1">
+                    <div className="flex flex-wrap gap-2 mb-1">
+                        {item.isSecret && (
+                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded">
+                            <Sparkles size={10} /> Überraschung
+                        </span>
+                        )}
+                        {isGroupMode && (
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded">
+                            <PieChart size={10} /> Sammelgeschenk
+                        </span>
+                        )}
+                        {item.isBought && (
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded">
+                            <ShoppingBag size={10} /> Bereits Gekauft
+                        </span>
+                        )}
+                    </div>
+                    
+                    <h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved && currentMode === 'guest' && !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                        {item.title}
+                    </h3>
+                    
+                    <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">
+                        {item.price && <span>{item.price}</span>}
+                        {item.link && (
+                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline flex items-center gap-1">Link öffnen &rarr;</a>
+                        )}
+                    </div>
+                    </div>
+
+                    {currentMode === 'owner' && (
+                    <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2">
+                        <Trash2 size={16} />
+                    </button>
+                    )}
+                </div>
+
+                {currentMode === 'guest' && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                    
+                    {isGroupMode ? (
+                        <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm flex-1">
+                            <div className="text-blue-600 flex flex-wrap gap-1 items-center">
+                            <Users size={12} />
+                            <span>{contributorCount} {contributorCount === 1 ? 'macht' : 'machen'} mit:</span>
+                            <span className="font-semibold text-slate-700 text-xs">{contributorNames}</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            {isContributer && (
+                            <button 
+                                onClick={() => onToggleBought(item)}
+                                className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
+                                title={item.isBought ? "Als nicht gekauft markieren" : "Als gekauft markieren"}
+                            >
+                                <ShoppingBag size={16} />
+                            </button>
+                            )}
+                            <button
+                            onClick={() => onToggleReservation(item, 'group')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                                isContributer 
+                                ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
+                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'
+                            }`}
+                            >
+                            {isContributer ? 'Verlassen' : 'Beteiligen'}
+                            </button>
+                        </div>
+                        </div>
+                    ) : isReserved ? (
+                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-sm">
+                            <span className={`flex items-center justify-center w-6 h-6 rounded-full ${item.isBought ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-600'}`}>
+                            {item.isBought ? <Check size={12} /> : <Lock size={12} />}
+                            </span>
+                            <span className="text-slate-500">
+                            {item.isBought ? 'Gekauft von:' : 'Reserviert:'} <span className="font-semibold text-slate-700">{isReservedByMe ? 'Du' : item.reservedBy.name}</span>
+                            </span>
+                        </div>
+                        {isReservedByMe && (
+                            <div className="flex gap-2">
+                            <button 
+                                onClick={() => onToggleBought(item)}
+                                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
+                                item.isBought 
+                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                                : 'bg-white border border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-600'
+                                }`}
+                            >
+                                {item.isBought ? 'Erledigt' : 'Kaufen?'}
+                            </button>
+                            <button
+                                onClick={() => onToggleReservation(item, 'single')}
+                                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            >
+                                Freigeben
+                            </button>
+                            </div>
+                        )}
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                        <button
+                            onClick={() => onToggleReservation(item, 'single')}
+                            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"
+                        >
+                            <CheckCircle size={14} /> Reservieren
+                        </button>
+                        <button
+                            onClick={() => onToggleReservation(item, 'group')}
+                            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"
+                        >
+                            <PieChart size={14} /> Sammeln
+                        </button>
+                        </div>
+                    )}
+                    </div>
+                )}
+                </div>
+            );
+        };
+
+        const ChatArea = ({ messages, guestName, onSend, currentUserUid }) => {
+            const [newMessage, setNewMessage] = useState('');
+
+            const handleSend = () => {
+                if (!newMessage.trim()) return;
+                onSend(newMessage);
+                setNewMessage('');
+            };
+
+            return (
+                <div className="flex flex-col h-full pt-2">
+                <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg mb-4 text-xs text-amber-800 flex gap-2">
+                    <EyeOff size={16} className="shrink-0" />
+                    <div><strong>Pssst!</strong> Ersteller sieht das nicht.</div>
+                </div>
+                <div className="flex-1 space-y-3 mb-4 overflow-y-auto max-h-[50vh]">
+                    {messages.length === 0 && <div className="text-center text-slate-400 text-sm mt-8">Keine Nachrichten.</div>}
+                    {messages.map(msg => {
+                    const isMe = msg.uid === currentUserUid || msg.sender === guestName;
+                    return (
+                        <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-emerald-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>
+                            {msg.text}
+                        </div>
+                        <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.sender}</span>
+                        </div>
+                    );
+                    })}
+                </div>
+                <div className="sticky bottom-0 bg-white p-2 border-t flex gap-2">
+                    <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Nachricht..." className="flex-1 px-4 py-2 bg-slate-100 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
+                    <button onClick={handleSend} className="p-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700"><Send size={18} /></button>
+                </div>
+                </div>
+            );
+        };
+
+        const AddItemInput = ({ currentMode, onAdd }) => {
+            const [text, setText] = useState('');
+            const [price, setPrice] = useState('');
+            const [link, setLink] = useState('');
+
+            const handleAdd = () => {
+                if(!text) return;
+                onAdd({
+                title: text, price, link,
+                isSecret: currentMode === 'guest'
+                });
+                setText(''); setPrice(''); setLink('');
+            }
+
+            return (
+                <div className="sticky bottom-0 bg-white/90 backdrop-blur-md p-4 border-t border-slate-100 shadow-lg">
+                <div className="flex flex-col gap-2">
+                    <div className="flex gap-2 items-center">
+                    <input value={text} onChange={(e) => setText(e.target.value)} placeholder={currentMode === 'owner' ? "Neuer Wunsch..." : "Überraschungs-Idee..."} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner" />
+                    <button onClick={handleAdd} disabled={!text} className={`p-3 rounded-xl text-white shadow-lg transform active:scale-95 transition-all ${currentMode === 'owner' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-200'}`}>
+                        {currentMode === 'owner' ? <Plus size={24} /> : <Sparkles size={24} />}
+                    </button>
+                    </div>
+                    {currentMode === 'owner' && (
+                    <div className="flex gap-2 items-center text-xs animate-in slide-in-from-bottom-2 fade-in duration-300">
+                        <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Preis (opt)" className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link (opt)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                    )}
+                </div>
+                </div>
+            );
+        };
+
+        const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [isRegister, setIsRegister] = useState(false);
+            const [error, setError] = useState(null); 
+            const [currentDomain, setCurrentDomain] = useState('');
+            const [verificationSent, setVerificationSent] = useState(false);
+
+            useEffect(() => {
+                if (typeof window !== 'undefined') {
+                setCurrentDomain(window.location.hostname);
+                }
+            }, []);
+
+            useEffect(() => {
+                if (isOpen) {
+                setVerificationSent(false);
+                setError(null);
+                }
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError(null);
+                try {
+                if (isRegister) {
+                    const userCredential = await onRegister(email, password);
+                    await sendEmailVerification(userCredential.user);
+                    await signOut(auth);
+                    setVerificationSent(true);
+                } else {
+                    const userCredential = await onLogin(email, password);
+                    if (!userCredential.user.emailVerified) {
+                    await signOut(auth);
+                    setError({ msg: "Bitte bestätige erst deine E-Mail-Adresse!", code: 'auth/unverified-email' });
+                    return;
+                    }
+                    onClose();
+                }
+                } catch (err) {
+                let msg = `Fehler: ${err.message}`;
+                if (err.code === 'auth/invalid-credential') msg = "E-Mail oder Passwort falsch."; 
+                setError({ msg, code: err.code });
+                }
+            };
+
+            if (verificationSent) {
+                return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl text-center">
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><Mail size={32} /></div>
+                    <h2 className="text-2xl font-bold mb-2 text-slate-800">Fast geschafft!</h2>
+                    <p className="text-slate-600 mb-6">Wir haben eine Bestätigungs-E-Mail an <strong>{email}</strong> gesendet. Bitte klicke auf den Link darin.</p>
+                    <button onClick={() => { setVerificationSent(false); setIsRegister(false); }} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors">Zurück zum Login</button>
+                    </div>
+                </div>
+                );
+            }
+
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">✕</button>
+                    <h2 className="text-xl font-bold mb-1">{isRegister ? 'Konto erstellen' : 'Anmelden'}</h2>
+                    <p className="text-slate-500 text-sm mb-4">{isRegister ? 'Zum dauerhaften Speichern deiner Listen.' : 'Willkommen zurück!'}</p>
+                    
+                    {error && (
+                    <div className="bg-red-50 border border-red-100 text-red-600 text-xs p-3 rounded-lg mb-4 font-bold">
+                        {error.msg}
+                    </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-3">
+                    <div className="relative">
+                        <Mail className="absolute left-3 top-3 text-slate-400" size={16} />
+                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-Mail Adresse" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                    </div>
+                    <div className="relative">
+                        <Key className="absolute left-3 top-3 text-slate-400" size={16} />
+                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passwort" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required minLength={6} />
+                    </div>
+                    <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200">{isRegister ? 'Kostenlos registrieren' : 'Einloggen'}</button>
+                    </form>
+                    <div className="mt-4 text-center text-sm text-slate-500">{isRegister ? 'Schon ein Konto?' : 'Noch kein Konto?'} <button onClick={() => setIsRegister(!isRegister)} className="ml-1 text-indigo-600 font-semibold hover:underline">{isRegister ? 'Hier einloggen' : 'Jetzt registrieren'} </button></div>
+                </div>
+                </div>
+            );
+        };
+
+        function InviteScreen({ listData, onJoin }) {
+            const [joinName, setJoinName] = useState('');
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-slate-50">
+                <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                    <div className="bg-emerald-600 p-8 text-center text-white">
+                    <Gift className="w-12 h-12 mx-auto mb-3 text-emerald-100" />
+                    <h2 className="text-xl font-medium text-emerald-100 mb-1">Du bist eingeladen zu</h2>
+                    <h1 className="text-3xl font-bold">{listData.title}</h1>
+                    <p className="text-sm opacity-80 mt-2">{listData.eventDate && new Date(listData.eventDate).toLocaleDateString('de-DE')}</p>
+                    </div>
+                    <div className="p-8 space-y-4">
+                    <p className="text-center text-slate-600 text-sm">Bitte gib deinen Namen ein, um die Wunschliste zu sehen und Geschenke zu reservieren.</p>
+                    <input 
+                        type="text" 
+                        value={joinName} 
+                        onChange={(e) => setJoinName(e.target.value)} 
+                        placeholder="Dein Name" 
+                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-center text-lg" 
+                        autoFocus
+                    />
+                    <button 
+                        disabled={!joinName}
+                        onClick={() => onJoin(listData.id, joinName)} 
+                        className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-emerald-200"
+                    >
+                        Liste öffnen &rarr;
+                    </button>
+                    </div>
+                </div>
+                </div>
+            );
+        }
+
+        function LandingPage({ onCreate, onJoin, user, onLogin, onRegister, onLogout, myLists, onOpenList, onDeleteList }) {
+            const [title, setTitle] = useState('');
+            const [date, setDate] = useState('');
+            const [joinId, setJoinId] = useState('');
+            const [showAuthModal, setShowAuthModal] = useState(false);
+            const [showJoinInput, setShowJoinInput] = useState(false);
+
+            return (
+                <div className="flex flex-col min-h-screen bg-slate-50 relative">
+                <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLogin={onLogin} onRegister={onRegister} />
+
+                {/* Header */}
+                <div className="bg-white/80 backdrop-blur sticky top-0 z-20 border-b border-slate-200 p-4 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                    <div className="bg-indigo-600 p-1.5 rounded-lg text-white"><Gift size={18} /></div>
+                    <h1 className="font-bold text-slate-800 tracking-tight">WunschWelle</h1>
+                    </div>
+                    
+                    {!user || user.isAnonymous ? (
+                    <button onClick={() => setShowAuthModal(true)} className="text-sm font-medium text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors">
+                        Anmelden
+                    </button>
+                    ) : (
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span>
+                        <button onClick={onLogout} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><LogOut size={16} /></button>
+                    </div>
+                    )}
+                </div>
+
+                <div className="flex-1 p-4 max-w-md mx-auto w-full flex flex-col">
+                    
+                    {/* --- SECTION 1: CREATE NEW --- */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+                    <div className="bg-indigo-600 p-6 text-white text-center">
+                        <h2 className="text-2xl font-bold mb-2">Wünsche erfüllen.</h2>
+                        <p className="text-indigo-100 text-sm">Erstelle deine Liste und teile sie mit Freunden.</p>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <div>
+                        <label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Titel</label>
+                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="z.B. Mein Geburtstag" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" />
+                        </div>
+                        <div>
+                        <label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Wann?</label>
+                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" />
+                        </div>
+                        <button disabled={!title} onClick={() => onCreate(title, date)} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                        <Plus size={20} /> Liste starten
+                        </button>
+                    </div>
+                    </div>
+
+                    {/* --- SECTION 2: MY LISTS --- */}
+                    {user && (
+                    <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <List size={16} className="text-indigo-500" /> Deine Listen
+                        </h3>
+                        
+                        {(!myLists || myLists.length === 0) ? (
+                            <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                                <p className="text-slate-400 text-sm mb-1">Noch keine Listen erstellt.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                            {myLists.map(list => (
+                                <div key={list.id} onClick={() => onOpenList(list)} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer flex items-center justify-between group">
+                                <div>
+                                    <div className="font-bold text-slate-800">{list.title}</div>
+                                    <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                    <Calendar size={10} /> {list.eventDate ? new Date(list.eventDate).toLocaleDateString('de-DE') : 'Kein Datum'}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); onDeleteList(list.id); }} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                                    <ChevronRight size={20} className="text-slate-300" />
+                                </div>
+                                </div>
+                            ))}
+                            </div>
+                        )}
+                    </div>
+                    )}
+
+                    {/* --- SECTION 3: JOIN MANUALLY --- */}
+                    <div className="mt-auto pt-8 text-center pb-8">
+                    {!showJoinInput ? (
+                        <button onClick={() => setShowJoinInput(true)} className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1 mx-auto transition-colors">
+                        <Search size={14} /> Code eingeben?
+                        </button>
+                    ) : (
+                        <div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2">
+                        <input type="text" value={joinId} onChange={(e) => setJoinId(e.target.value)} placeholder="Code..." className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-indigo-500" autoFocus />
+                        <button disabled={!joinId} onClick={() => onJoin(joinId, "Gast")} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50"><ArrowRight size={16} /></button>
+                        </div>
+                    )}
+                    </div>
+
+                </div>
+                </div>
+            );
+        }
+
+        function WishListDashboard({ listData, mode, guestName, onBack, user }) {
+            const [items, setItems] = useState([]);
+            const [messages, setMessages] = useState([]);
+            const [activeTab, setActiveTab] = useState('wishes');
+
+            // --- REAL FIRESTORE LISTENERS ---
+            useEffect(() => {
+                if (!listData?.id) return;
+
+                // 1. ITEMS LISTENER
+                const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`);
+                const unsubItems = onSnapshot(itemsRef, (snapshot) => {
+                const loadedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                loadedItems.sort(sortByDateDesc);
+                setItems(loadedItems);
+                }, (error) => console.error("Items Error:", error));
+
+                // 2. CHAT LISTENER
+                const chatRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`);
+                const unsubChat = onSnapshot(chatRef, (snapshot) => {
+                const loadedMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                loadedMsgs.sort(sortByDateAsc); // Chat needs ASC order
+                setMessages(loadedMsgs);
+                }, (error) => console.error("Chat Error:", error));
+
+                return () => {
+                unsubItems();
+                unsubChat();
+                };
+            }, [listData]);
+
+            // --- ACTIONS ---
+            
+            const handleAddItem = async (newItem) => {
+                if (!user) return;
+                try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`), {
+                    ...newItem,
+                    createdAt: serverTimestamp(),
+                    contributors: [],
+                    reservedBy: null,
+                    addedBy: mode === 'guest' ? guestName : 'Owner'
+                });
+                } catch (e) {
+                console.error("Add Item Error:", e);
+                alert("Fehler beim Hinzufügen.");
+                }
+            };
+
+            const handleDeleteItem = async (id) => {
+                if (!user) return;
+                try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, id));
+                } catch (e) {
+                console.error("Delete Error:", e);
+                }
+            };
+
+            const handleToggleReservation = async (item, type = 'single') => {
+                if (!user) return;
+                // Check if guest name exists
+                if (!guestName || guestName.trim() === '') {
+                alert("Bitte gib zuerst deinen Namen an (Login oder Gast-Zugang).");
+                return;
+                }
+
+                const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
+                const userObj = { uid: user.uid, name: guestName };
+                
+                try {
+                if (type === 'group' || (item.contributors && item.contributors.length > 0)) {
+                    const hasJoined = item.contributors?.some(c => c.uid === user.uid);
+                    
+                    let newContributors = item.contributors || [];
+                    if (hasJoined) {
+                    newContributors = newContributors.filter(c => c.uid !== user.uid);
+                    } else {
+                    newContributors.push(userObj);
+                    }
+                    
+                    await updateDoc(itemRef, { 
+                    contributors: newContributors,
+                    reservedBy: null 
+                    });
+
+                } else {
+                    const isReservedByMe = item.reservedBy?.uid === user.uid;
+                    if (item.reservedBy && !isReservedByMe) {
+                    alert("Bereits reserviert von " + item.reservedBy.name);
+                    return;
+                    }
+                    const newReservedBy = isReservedByMe ? null : userObj;
+                    await updateDoc(itemRef, { reservedBy: newReservedBy });
+                }
+                } catch (e) {
+                console.error("Reservation Error:", e);
+                alert("Konnte Reservierung nicht ändern. Bist du eingeloggt?");
+                }
+            };
+
+            const handleToggleBought = async (item) => {
+                if (!user) return;
+                try {
+                const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
+                await updateDoc(itemRef, { isBought: !item.isBought });
+                } catch(e) {
+                console.error("Buying Error:", e);
+                }
+            };
+
+            const handleSendMessage = async (text) => {
+                if (!user) return;
+                try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`), {
+                    text,
+                    sender: guestName,
+                    uid: user.uid, // Save UID for better identification
+                    createdAt: serverTimestamp()
+                });
+                } catch (e) {
+                console.error("Send Msg Error:", e);
+                }
+            };
+
+            const getDaysLeft = () => {
+                if (!listData?.eventDate) return null;
+                const diff = new Date(listData.eventDate) - new Date();
+                return Math.ceil(diff / (1000 * 60 * 60 * 24));
+            };
+            const daysLeft = getDaysLeft();
+            
+            const visibleItems = items.filter(item => mode === 'owner' ? !item.isSecret : true);
+            const totalItems = visibleItems.filter(i => !i.isSecret).length;
+            // Done = Bought OR (Group > 0)
+            const doneItems = visibleItems.filter(i => !i.isSecret && (item.isBought || (item.contributors && item.contributors.length > 0))).length;
+            const progress = totalItems > 0 ? (doneItems / totalItems) * 100 : 0;
+
+            // SHARE FUNCTION (SAFE)
+            const handleShare = () => {
+                try {
+                const url = `${window.location.origin}${window.location.pathname}?list=${listData.id}`;
+                navigator.clipboard.writeText(url);
+                alert("Link in Zwischenablage kopiert!");
+                } catch (e) {
+                alert("ID zum Teilen: " + listData.id);
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative flex flex-col">
+                <div className={`${mode === 'owner' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white p-6 pb-12 rounded-b-3xl shadow-lg relative z-10 transition-colors duration-500`}>
+                    <div className="flex justify-between items-start mb-4">
+                    <button onClick={onBack} className="opacity-80 hover:opacity-100 text-sm flex items-center gap-1">&larr; Zurück</button>
+                    
+                    {/* USER INFO BADGE */}
+                    <div className="text-xs bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+                        <User size={10} />
+                        {mode === 'owner' ? 'Ersteller-Ansicht' : `Gast: ${guestName}`}
+                    </div>
+                    </div>
+                    <div className="flex justify-between items-end">
+                    <div>
+                        <h1 className="text-2xl font-bold mb-1">{listData.title}</h1>
+                        <p className="opacity-90 text-sm flex items-center gap-2">
+                        {listData.eventDate && new Date(listData.eventDate).toLocaleDateString('de-DE')} 
+                        </p>
+                    </div>
+                    {daysLeft !== null && (
+                        <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center min-w-[70px]">
+                        <span className="block text-2xl font-bold leading-none">{daysLeft > 0 ? daysLeft : 0}</span>
+                        <span className="text-[10px] uppercase tracking-wide opacity-80">Tage</span>
+                        </div>
+                    )}
+                    </div>
+                    
+                    {/* SHARE LINK SECTION (OWNER ONLY) */}
+                    {mode === 'owner' && (
+                    <div className="mt-4 flex items-center gap-2 text-xs bg-indigo-800/50 p-2 rounded-lg border border-indigo-400/30">
+                        <LinkIcon size={14} className="text-indigo-200" />
+                        <span className="truncate flex-1 text-indigo-100">Link zum Teilen bereit</span>
+                        <button 
+                        onClick={handleShare}
+                        className="bg-white text-indigo-700 px-3 py-1.5 rounded shadow-sm hover:bg-indigo-50 font-medium flex items-center gap-1"
+                        >
+                        <Copy size={12} /> Link kopieren
+                        </button>
+                    </div>
+                    )}
+
+                    {mode === 'guest' && (
+                    <div className="mt-4">
+                        <div className="flex justify-between text-xs mb-1 opacity-90"><span>Geschenke-Fortschritt</span><span>{Math.round(progress)}%</span></div>
+                        <div className="h-2 bg-emerald-900/30 rounded-full overflow-hidden"><div className="h-full bg-emerald-300 transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}></div></div>
+                    </div>
+                    )}
+                </div>
+
+                {mode === 'guest' && (
+                    <div className="flex bg-slate-100 p-1 mx-4 -mt-6 rounded-xl relative z-20 shadow-sm mb-4">
+                    <button onClick={() => setActiveTab('wishes')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'wishes' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><Gift size={16} /> Wünsche</button>
+                    <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'chat' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><MessageCircle size={16} /> Lounge</button>
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto px-4 pb-20">
+                    {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && (
+                    <div className="space-y-4 pt-2">
+                        {visibleItems.length === 0 && <div className="text-center py-12 text-slate-400"><Gift className="w-12 h-12 mx-auto mb-2 opacity-20" /><p>Noch keine Wünsche eingetragen.</p></div>}
+                        {visibleItems.map(item => <WishListItem key={item.id} item={item} mode={mode} currentUserUid={user?.uid} guestName={guestName} onDelete={handleDeleteItem} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} />)}
+                    </div>
+                    )}
+                    {mode === 'guest' && activeTab === 'chat' && <ChatArea messages={messages} guestName={guestName} onSend={handleSendMessage} currentUserUid={user?.uid} />}
+                </div>
+
+                {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && <AddItemInput currentMode={mode} onAdd={handleAddItem} />}
+                </div>
+            );
+        }
+
+        // --- MAIN APP COMPONENT ---
+        function App() {
+            const [user, setUser] = useState(null); 
+            const [viewMode, setViewMode] = useState('landing');
+            const [activeListData, setActiveListData] = useState(null);
+            const [guestName, setGuestName] = useState(() => {
+                try { return localStorage.getItem('wishlist_guest_name') || '' } catch(e) { return '' }
+            });
+            const [loading, setLoading] = useState(true);
+            const [userLists, setUserLists] = useState([]);
+
+            useEffect(() => {
+                try { localStorage.setItem('wishlist_guest_name', guestName); } catch(e) {}
+            }, [guestName]);
+
+            useEffect(() => {
+                const initAuth = async () => {
+                    const params = new URLSearchParams(window.location.search);
+                    const listIdFromUrl = params.get('list');
+
+                    try {
+                        // Prüfen ob schon eingeloggt
+                        await new Promise(resolve => {
+                            const unsub = onAuthStateChanged(auth, (u) => {
+                                unsub();
+                                resolve(u);
+                            });
+                        });
+
+                        if (!auth.currentUser) {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) {
+                        console.error("Auth Init Error", e);
+                    }
+
+                    if (listIdFromUrl) {
+                        try {
+                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listIdFromUrl);
+                            const snap = await getDoc(docRef);
+                            if (snap.exists()) {
+                                setActiveListData({ id: snap.id, ...snap.data() });
+                                setViewMode('invite-screen'); 
+                            }
+                        } catch (e) { console.error("URL Load Error:", e); }
+                    }
+                    setLoading(false);
+                };
+                initAuth();
+                return onAuthStateChanged(auth, (u) => {
+                    setUser(u);
+                    // Automatische Modus-Wahl basierend auf Ownership
+                    if (u && activeListData) {
+                        if (u.uid === activeListData.ownerId) {
+                            setViewMode('list-owner');
+                        }
+                    }
+                });
+            }, [activeListData?.id]); 
+
+            useEffect(() => {
+                if (!user) {
+                    setUserLists([]);
+                    return;
+                }
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'lists');
+                const unsubscribe = onSnapshot(q, (snapshot) => {
+                    const allLists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const myLists = allLists.filter(l => l.ownerId === user.uid).sort(sortByDateDesc);
+                    setUserLists(myLists);
+                });
+                return () => unsubscribe();
+            }, [user]);
+
+            const handleEmailLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
+            const handleRegister = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+            const handleLogout = async () => {
+                await signOut(auth);
+                await signInAnonymously(auth);
+                setViewMode('landing');
+                safeUpdateURL('');
+            };
+
+            const handleCreateList = async (title, date) => {
+                if (!user) return;
+                try {
+                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'lists'), {
+                        title,
+                        eventDate: date,
+                        ownerId: user.uid,
+                        createdAt: serverTimestamp()
+                    });
+                    const newList = { id: docRef.id, title, eventDate: date, ownerId: user.uid };
+                    setActiveListData(newList);
+                    setViewMode('list-owner');
+                    safeUpdateURL(docRef.id);
+                } catch (e) {
+                    console.error("Create List Error:", e);
+                    alert("Fehler beim Erstellen der Liste.");
+                }
+            };
+
+            const handleJoinList = async (listId, name) => {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId);
+                    const snap = await getDoc(docRef);
+                    if (snap.exists()) {
+                        setActiveListData({ id: snap.id, ...snap.data() });
+                        setGuestName(name);
+                        // Check ownership
+                        if (user && user.uid === snap.data().ownerId) {
+                            setViewMode('list-owner');
+                        } else {
+                            setViewMode('list-guest');
+                        }
+                        safeUpdateURL(snap.id);
+                    } else {
+                        alert("Liste nicht gefunden. Code überprüfen.");
+                    }
+                } catch (e) {
+                    console.error("Join Error:", e);
+                    alert("Fehler beim Beitreten.");
+                }
+            };
+
+            const handleOpenList = (list) => {
+                setActiveListData(list);
+                if (user && list.ownerId === user.uid) {
+                    setViewMode('list-owner');
+                } else {
+                    setViewMode('invite-screen');
+                }
+                safeUpdateURL(list.id);
+            };
+
+            const handleDeleteList = async (listId) => {
+                if (!confirm("Möchtest du diese Liste wirklich löschen?")) return;
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId));
+                } catch (e) {
+                    console.error("Delete List Error:", e);
+                    alert("Fehler beim Löschen.");
+                }
+            };
+
+            if (loading) return <div className="h-screen flex items-center justify-center text-slate-400">Lade WunschWelle...</div>;
+
+            if (viewMode === 'landing') {
+                return (
+                    <LandingPage 
+                        onCreate={handleCreateList} 
+                        onJoin={handleJoinList} 
+                        user={user} 
+                        onLogin={handleEmailLogin} 
+                        onRegister={handleRegister} 
+                        onLogout={handleLogout}
+                        myLists={userLists} 
+                        onOpenList={handleOpenList}
+                        onDeleteList={handleDeleteList}
+                    />
+                );
+            }
+
+            if (viewMode === 'invite-screen') {
+                return <InviteScreen listData={activeListData} onJoin={(id, name) => { 
+                    setGuestName(name); 
+                    // Check again before setting mode
+                    if (user && activeListData && user.uid === activeListData.ownerId) {
+                        setViewMode('list-owner');
+                    } else {
+                        setViewMode('list-guest'); 
+                    }
+                }} />;
+            }
+
+            // Fallback: If we are in list-owner or list-guest mode
+            const currentMode = (user && activeListData && user.uid === activeListData.ownerId) ? 'owner' : 'guest';
+
+            return <WishListDashboard 
+                listData={activeListData} 
+                mode={currentMode} 
+                guestName={guestName} 
+                user={user} 
+                onBack={() => { setViewMode('landing'); safeUpdateURL(''); }} 
+            />;
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
