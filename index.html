@@ -1,976 +1,935 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WunschWelle - Wunschzettel App</title>
-    
-    <!-- 1. Tailwind CSS für das Design -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Babel für React (JSX) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+import React, { useState, useEffect } from 'react';
+import { 
+  Plus, Trash2, Gift, MessageCircle, CheckCircle, 
+  Share2, Lock, EyeOff, Users, Send, Sparkles, 
+  LogIn, LogOut, User, Shield, PieChart, Mail, Key, AlertTriangle, Info, Copy, Check, Link as LinkIcon, ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight
+} from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged, 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  sendEmailVerification
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  onSnapshot, 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  serverTimestamp,
+  getDoc,
+  arrayUnion,
+  arrayRemove
+} from 'firebase/firestore'; 
 
-    <!-- 3. Import Map: Hier sagen wir dem Browser, wo er die Pakete findet -->
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "lucide-react": "https://esm.sh/lucide-react@0.344.0",
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+// --- FIREBASE CONFIGURATION ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAHbZj73RUzb9HzXfaaZXU4E03CV14KfYo",
+  authDomain: "wunschliste-f6271.firebaseapp.com",
+  projectId: "wunschliste-f6271",
+  storageBucket: "wunschliste-f6271.firebasestorage.app",
+  messagingSenderId: "802607999884",
+  appId: "1:802607999884:web:f7cef06a2da60d0ace44a9",
+  measurementId: "G-4NHT3SRWES"
+};
+
+// Initialisierung
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+// --- HELPER: SAFE URL UPDATE ---
+const safeUpdateURL = (param) => {
+  try {
+    const url = param ? `?list=${param}` : window.location.pathname;
+    if (typeof window !== 'undefined' && !window.location.href.startsWith('blob:')) {
+      window.history.pushState({}, '', url);
+    }
+  } catch (e) {
+    console.warn("URL Update in Sandbox unterdrückt:", e);
+  }
+};
+
+// --- HELPER: SORTING ---
+const sortByDateDesc = (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+const sortByDateAsc = (a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+
+// --- SUB-COMPONENTS ---
+
+const WishListItem = ({ item, mode, currentUserUid, guestName, onDelete, onToggleReservation, onToggleBought }) => {
+  const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
+  const contributorCount = item.contributors?.length || 0;
+  const contributorNames = item.contributors?.map(c => c.name).join(', ');
+  const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
+  const isReservedByMe = item.reservedBy?.uid === currentUserUid;
+  const isReserved = !!item.reservedBy;
+  const isFullyReserved = isReserved && !isGroupMode;
+  
+  return (
+    <div className={`bg-white border rounded-xl p-4 transition-all shadow-sm hover:shadow-md mb-3 ${
+      item.isSecret ? 'border-amber-200 bg-amber-50/50' : 
+      item.isBought ? 'border-emerald-200 bg-emerald-50/40' :
+      isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'
+    }`}>
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex-1">
+          <div className="flex flex-wrap gap-2 mb-1">
+            {item.isSecret && (
+              <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded">
+                <Sparkles size={10} /> Überraschung
+              </span>
+            )}
+            {isGroupMode && (
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded">
+                <PieChart size={10} /> Sammelgeschenk
+              </span>
+            )}
+            {item.isBought && (
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded">
+                <ShoppingBag size={10} /> Bereits Gekauft
+              </span>
+            )}
+          </div>
+          
+          <h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved && mode === 'guest' && !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+            {item.title}
+          </h3>
+          
+          <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">
+            {item.price && <span>{item.price}</span>}
+            {item.link && (
+              <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline flex items-center gap-1">Link öffnen &rarr;</a>
+            )}
+          </div>
+        </div>
+
+        {mode === 'owner' && (
+          <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2">
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
+
+      {mode === 'guest' && (
+        <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
+          
+          {isGroupMode ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm flex-1">
+                <div className="text-blue-600 flex flex-wrap gap-1 items-center">
+                  <Users size={12} />
+                  <span>{contributorCount} {contributorCount === 1 ? 'macht' : 'machen'} mit:</span>
+                  <span className="font-semibold text-slate-700 text-xs">{contributorNames}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {isContributer && (
+                  <button 
+                    onClick={() => onToggleBought(item)}
+                    className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
+                    title={item.isBought ? "Als nicht gekauft markieren" : "Als gekauft markieren"}
+                  >
+                    <ShoppingBag size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={() => onToggleReservation(item, 'group')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    isContributer 
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'
+                  }`}
+                >
+                  {isContributer ? 'Verlassen' : 'Beteiligen'}
+                </button>
+              </div>
+            </div>
+          ) : isReserved ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                <span className={`flex items-center justify-center w-6 h-6 rounded-full ${item.isBought ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-600'}`}>
+                  {item.isBought ? <Check size={12} /> : <Lock size={12} />}
+                </span>
+                <span className="text-slate-500">
+                  {item.isBought ? 'Gekauft von:' : 'Reserviert:'} <span className="font-semibold text-slate-700">{isReservedByMe ? 'Du' : item.reservedBy.name}</span>
+                </span>
+              </div>
+              {isReservedByMe && (
+                <div className="flex gap-2">
+                   <button 
+                    onClick={() => onToggleBought(item)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
+                      item.isBought 
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                      : 'bg-white border border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-600'
+                    }`}
+                  >
+                    {item.isBought ? 'Erledigt' : 'Kaufen?'}
+                  </button>
+                  <button
+                    onClick={() => onToggleReservation(item, 'single')}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                  >
+                    Freigeben
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => onToggleReservation(item, 'single')}
+                className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"
+              >
+                <CheckCircle size={14} /> Reservieren
+              </button>
+              <button
+                onClick={() => onToggleReservation(item, 'group')}
+                className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"
+              >
+                <PieChart size={14} /> Sammeln
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ChatArea = ({ messages, guestName, onSend, currentUserUid }) => {
+  const [newMessage, setNewMessage] = useState('');
+
+  const handleSend = () => {
+    if (!newMessage.trim()) return;
+    onSend(newMessage);
+    setNewMessage('');
+  };
+
+  return (
+    <div className="flex flex-col h-full pt-2">
+      <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg mb-4 text-xs text-amber-800 flex gap-2">
+        <EyeOff size={16} className="shrink-0" />
+        <div><strong>Pssst!</strong> Ersteller sieht das nicht.</div>
+      </div>
+      <div className="flex-1 space-y-3 mb-4 overflow-y-auto max-h-[50vh]">
+        {messages.length === 0 && <div className="text-center text-slate-400 text-sm mt-8">Keine Nachrichten.</div>}
+        {messages.map(msg => {
+          const isMe = msg.uid === currentUserUid || msg.sender === guestName;
+          return (
+            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+              <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-emerald-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>
+                {msg.text}
+              </div>
+              <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.sender}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="sticky bottom-0 bg-white p-2 border-t flex gap-2">
+        <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Nachricht..." className="flex-1 px-4 py-2 bg-slate-100 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
+        <button onClick={handleSend} className="p-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700"><Send size={18} /></button>
+      </div>
+    </div>
+  );
+};
+
+const AddItemInput = ({ currentMode, onAdd }) => {
+  const [text, setText] = useState('');
+  const [price, setPrice] = useState('');
+  const [link, setLink] = useState('');
+
+  const handleAdd = () => {
+    if(!text) return;
+    onAdd({
+      title: text, price, link,
+      isSecret: currentMode === 'guest'
+    });
+    setText(''); setPrice(''); setLink('');
+  }
+
+  return (
+    <div className="sticky bottom-0 bg-white/90 backdrop-blur-md p-4 border-t border-slate-100 shadow-lg">
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2 items-center">
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={currentMode === 'owner' ? "Neuer Wunsch..." : "Überraschungs-Idee..."} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner" />
+          <button onClick={handleAdd} disabled={!text} className={`p-3 rounded-xl text-white shadow-lg transform active:scale-95 transition-all ${currentMode === 'owner' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-200'}`}>
+            {currentMode === 'owner' ? <Plus size={24} /> : <Sparkles size={24} />}
+          </button>
+        </div>
+        {currentMode === 'owner' && (
+          <div className="flex gap-2 items-center text-xs animate-in slide-in-from-bottom-2 fade-in duration-300">
+            <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Preis (opt)" className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+             <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link (opt)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- AUTH COMPONENT ---
+
+const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isRegister, setIsRegister] = useState(false);
+  const [error, setError] = useState(null); 
+  const [currentDomain, setCurrentDomain] = useState('');
+  const [verificationSent, setVerificationSent] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentDomain(window.location.hostname);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setVerificationSent(false);
+      setError(null);
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      if (isRegister) {
+        const userCredential = await onRegister(email, password);
+        await sendEmailVerification(userCredential.user);
+        await signOut(auth);
+        setVerificationSent(true);
+      } else {
+        const userCredential = await onLogin(email, password);
+        if (!userCredential.user.emailVerified) {
+          await signOut(auth);
+          setError({ msg: "Bitte bestätige erst deine E-Mail-Adresse!", code: 'auth/unverified-email' });
+          return;
+        }
+        onClose();
+      }
+    } catch (err) {
+      let msg = `Fehler: ${err.message}`;
+      if (err.code === 'auth/invalid-credential') msg = "E-Mail oder Passwort falsch."; 
+      setError({ msg, code: err.code });
+    }
+  };
+
+  if (verificationSent) {
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl text-center">
+          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><Mail size={32} /></div>
+          <h2 className="text-2xl font-bold mb-2 text-slate-800">Fast geschafft!</h2>
+          <p className="text-slate-600 mb-6">Wir haben eine Bestätigungs-E-Mail an <strong>{email}</strong> gesendet. Bitte klicke auf den Link darin.</p>
+          <button onClick={() => { setVerificationSent(false); setIsRegister(false); }} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors">Zurück zum Login</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">✕</button>
+        <h2 className="text-xl font-bold mb-1">{isRegister ? 'Konto erstellen' : 'Anmelden'}</h2>
+        <p className="text-slate-500 text-sm mb-4">{isRegister ? 'Zum dauerhaften Speichern deiner Listen.' : 'Willkommen zurück!'}</p>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 text-xs p-3 rounded-lg mb-4 font-bold">
+            {error.msg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 text-slate-400" size={16} />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-Mail Adresse" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required />
+          </div>
+          <div className="relative">
+            <Key className="absolute left-3 top-3 text-slate-400" size={16} />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passwort" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required minLength={6} />
+          </div>
+          <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200">{isRegister ? 'Kostenlos registrieren' : 'Einloggen'}</button>
+        </form>
+        <div className="mt-4 text-center text-sm text-slate-500">{isRegister ? 'Schon ein Konto?' : 'Noch kein Konto?'} <button onClick={() => setIsRegister(!isRegister)} className="ml-1 text-indigo-600 font-semibold hover:underline">{isRegister ? 'Hier einloggen' : 'Jetzt registrieren'} </button></div>
+      </div>
+    </div>
+  );
+};
+
+// --- INVITE SCREEN ---
+function InviteScreen({ listData, onJoin }) {
+  const [joinName, setJoinName] = useState('');
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-slate-50">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="bg-emerald-600 p-8 text-center text-white">
+          <Gift className="w-12 h-12 mx-auto mb-3 text-emerald-100" />
+          <h2 className="text-xl font-medium text-emerald-100 mb-1">Du bist eingeladen zu</h2>
+          <h1 className="text-3xl font-bold">{listData.title}</h1>
+          <p className="text-sm opacity-80 mt-2">{listData.eventDate && new Date(listData.eventDate).toLocaleDateString('de-DE')}</p>
+        </div>
+        <div className="p-8 space-y-4">
+          <p className="text-center text-slate-600 text-sm">Bitte gib deinen Namen ein, um die Wunschliste zu sehen und Geschenke zu reservieren.</p>
+          <input 
+            type="text" 
+            value={joinName} 
+            onChange={(e) => setJoinName(e.target.value)} 
+            placeholder="Dein Name" 
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-center text-lg" 
+            autoFocus
+          />
+          <button 
+            disabled={!joinName}
+            onClick={() => onJoin(listData.id, joinName)} 
+            className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-emerald-200"
+          >
+            Liste öffnen &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- LANDING PAGE ---
+
+function LandingPage({ onCreate, onJoin, user, onLogin, onRegister, onLogout, myLists, onOpenList, onDeleteList }) {
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+  const [joinId, setJoinId] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showJoinInput, setShowJoinInput] = useState(false);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-50 relative">
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLogin={onLogin} onRegister={onRegister} />
+
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur sticky top-0 z-20 border-b border-slate-200 p-4 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <div className="bg-indigo-600 p-1.5 rounded-lg text-white"><Gift size={18} /></div>
+          <h1 className="font-bold text-slate-800 tracking-tight">WunschWelle</h1>
+        </div>
+        
+        {!user || user.isAnonymous ? (
+          <button onClick={() => setShowAuthModal(true)} className="text-sm font-medium text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors">
+            Anmelden
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span>
+            <button onClick={onLogout} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><LogOut size={16} /></button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 p-4 max-w-md mx-auto w-full flex flex-col">
+        
+        {/* --- SECTION 1: CREATE NEW --- */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+          <div className="bg-indigo-600 p-6 text-white text-center">
+            <h2 className="text-2xl font-bold mb-2">Wünsche erfüllen.</h2>
+            <p className="text-indigo-100 text-sm">Erstelle deine Liste und teile sie mit Freunden.</p>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Titel</label>
+              <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="z.B. Mein Geburtstag" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Wann?</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" />
+            </div>
+            <button disabled={!title} onClick={() => onCreate(title, date)} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+              <Plus size={20} /> Liste starten
+            </button>
+          </div>
+        </div>
+
+        {/* --- SECTION 2: MY LISTS --- */}
+        {user && (
+          <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <List size={16} className="text-indigo-500" /> Deine Listen
+            </h3>
+            
+            {(!myLists || myLists.length === 0) ? (
+              <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                <p className="text-slate-400 text-sm mb-1">Noch keine Listen erstellt.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {myLists.map(list => (
+                  <div key={list.id} onClick={() => onOpenList(list)} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer flex items-center justify-between group">
+                    <div>
+                      <div className="font-bold text-slate-800">{list.title}</div>
+                      <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                        <Calendar size={10} /> {list.eventDate ? new Date(list.eventDate).toLocaleDateString('de-DE') : 'Kein Datum'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={(e) => { e.stopPropagation(); onDeleteList(list.id); }} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                      <ChevronRight size={20} className="text-slate-300" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* --- SECTION 3: JOIN MANUALLY --- */}
+        <div className="mt-auto pt-8 text-center pb-8">
+          {!showJoinInput ? (
+            <button onClick={() => setShowJoinInput(true)} className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1 mx-auto transition-colors">
+              <Search size={14} /> Code eingeben?
+            </button>
+          ) : (
+            <div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2">
+              <input type="text" value={joinId} onChange={(e) => setJoinId(e.target.value)} placeholder="Code..." className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-indigo-500" autoFocus />
+              <button disabled={!joinId} onClick={() => onJoin(joinId, "Gast")} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50"><ArrowRight size={16} /></button>
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function WishListDashboard({ listData, mode, guestName, onBack, user }) {
+  const [items, setItems] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [activeTab, setActiveTab] = useState('wishes');
+
+  // --- REAL FIRESTORE LISTENERS ---
+  useEffect(() => {
+    if (!listData?.id) return;
+
+    // 1. ITEMS LISTENER
+    const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`);
+    const unsubItems = onSnapshot(itemsRef, (snapshot) => {
+      const loadedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      loadedItems.sort(sortByDateDesc);
+      setItems(loadedItems);
+    }, (error) => console.error("Items Error:", error));
+
+    // 2. CHAT LISTENER
+    const chatRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`);
+    const unsubChat = onSnapshot(chatRef, (snapshot) => {
+      const loadedMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      loadedMsgs.sort(sortByDateAsc); // Chat needs ASC order
+      setMessages(loadedMsgs);
+    }, (error) => console.error("Chat Error:", error));
+
+    return () => {
+      unsubItems();
+      unsubChat();
+    };
+  }, [listData]);
+
+  // --- ACTIONS ---
+  
+  const handleAddItem = async (newItem) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`), {
+        ...newItem,
+        createdAt: serverTimestamp(),
+        contributors: [],
+        reservedBy: null,
+        addedBy: mode === 'guest' ? guestName : 'Owner'
+      });
+    } catch (e) {
+      console.error("Add Item Error:", e);
+      alert("Fehler beim Hinzufügen.");
+    }
+  };
+
+  const handleDeleteItem = async (id) => {
+    if (!user) return;
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, id));
+    } catch (e) {
+      console.error("Delete Error:", e);
+    }
+  };
+
+  const handleToggleReservation = async (item, type = 'single') => {
+    if (!user) return;
+    // Check if guest name exists
+    if (!guestName || guestName.trim() === '') {
+      alert("Bitte gib zuerst deinen Namen an (Login oder Gast-Zugang).");
+      return;
+    }
+
+    const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
+    const userObj = { uid: user.uid, name: guestName };
+    
+    try {
+      if (type === 'group' || (item.contributors && item.contributors.length > 0)) {
+        const hasJoined = item.contributors?.some(c => c.uid === user.uid);
+        
+        let newContributors = item.contributors || [];
+        if (hasJoined) {
+          newContributors = newContributors.filter(c => c.uid !== user.uid);
+        } else {
+          newContributors.push(userObj);
+        }
+        
+        await updateDoc(itemRef, { 
+          contributors: newContributors,
+          reservedBy: null 
+        });
+
+      } else {
+        const isReservedByMe = item.reservedBy?.uid === user.uid;
+        if (item.reservedBy && !isReservedByMe) {
+          alert("Bereits reserviert von " + item.reservedBy.name);
+          return;
+        }
+        const newReservedBy = isReservedByMe ? null : userObj;
+        await updateDoc(itemRef, { reservedBy: newReservedBy });
+      }
+    } catch (e) {
+      console.error("Reservation Error:", e);
+      alert("Konnte Reservierung nicht ändern. Bist du eingeloggt?");
+    }
+  };
+
+  const handleToggleBought = async (item) => {
+    if (!user) return;
+    try {
+      const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
+      await updateDoc(itemRef, { isBought: !item.isBought });
+    } catch(e) {
+      console.error("Buying Error:", e);
+    }
+  };
+
+  const handleSendMessage = async (text) => {
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`), {
+        text,
+        sender: guestName,
+        uid: user.uid, // Save UID for better identification
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.error("Send Msg Error:", e);
+    }
+  };
+
+  const getDaysLeft = () => {
+    if (!listData?.eventDate) return null;
+    const diff = new Date(listData.eventDate) - new Date();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+  const daysLeft = getDaysLeft();
+  
+  const visibleItems = items.filter(item => mode === 'owner' ? !item.isSecret : true);
+  const totalItems = visibleItems.filter(i => !i.isSecret).length;
+  // Done = Bought OR (Group > 0)
+  const doneItems = visibleItems.filter(i => !i.isSecret && (item.isBought || (item.contributors && item.contributors.length > 0))).length;
+  const progress = totalItems > 0 ? (doneItems / totalItems) * 100 : 0;
+
+  // SHARE FUNCTION (SAFE & MOBILE FRIENDLY)
+  const handleShare = async () => {
+    const url = `${window.location.origin}${window.location.pathname}?list=${listData.id}`;
+    
+    // 1. Try Native Share (Mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Wunschliste: ${listData.title}`,
+          text: `Schau dir meine Wunschliste "${listData.title}" an!`,
+          url: url,
+        });
+        return;
+      } catch (err) {
+        console.log('Share aborted', err);
       }
     }
-    </script>
 
-    <style>
-        /* Custom Scrollbar für die Listen */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        body {
-            background-color: #f8fafc; /* Slate-50 fallback */
-        }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
+    // 2. Fallback: Copy to Clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Link in Zwischenablage kopiert! Du kannst ihn jetzt versenden.");
+    } catch (e) {
+      // 3. Fallback: Manual
+      alert("ID zum Teilen: " + listData.id);
+    }
+  };
 
-    <!-- 4. Der eigentliche App Code -->
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { 
-            Plus, Trash2, Gift, MessageCircle, CheckCircle, 
-            Share2, Lock, EyeOff, Users, Send, Sparkles, 
-            LogIn, LogOut, User, Shield, PieChart, Mail, Key, 
-            AlertTriangle, Info, Copy, Check, Link as LinkIcon, 
-            ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight
-        } from 'lucide-react';
+  return (
+    <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative flex flex-col">
+      <div className={`${mode === 'owner' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white p-6 pb-12 rounded-b-3xl shadow-lg relative z-10 transition-colors duration-500`}>
+        <div className="flex justify-between items-start mb-4">
+          <button onClick={onBack} className="opacity-80 hover:opacity-100 text-sm flex items-center gap-1">&larr; Zurück</button>
+          
+          {/* USER INFO BADGE */}
+          <div className="text-xs bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+            <User size={10} />
+            {mode === 'owner' ? 'Ersteller-Ansicht' : `Gast: ${guestName}`}
+          </div>
+        </div>
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-2xl font-bold mb-1">{listData.title}</h1>
+            <p className="opacity-90 text-sm flex items-center gap-2">
+              {listData.eventDate && new Date(listData.eventDate).toLocaleDateString('de-DE')} 
+            </p>
+          </div>
+          {daysLeft !== null && (
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center min-w-[70px]">
+              <span className="block text-2xl font-bold leading-none">{daysLeft > 0 ? daysLeft : 0}</span>
+              <span className="text-[10px] uppercase tracking-wide opacity-80">Tage</span>
+            </div>
+          )}
+        </div>
         
-        import { initializeApp } from 'firebase/app';
-        import { 
-            getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
-            onAuthStateChanged, 
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut,
-            sendEmailVerification
-        } from 'firebase/auth';
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            onSnapshot, 
-            doc, 
-            updateDoc, 
-            deleteDoc, 
-            serverTimestamp,
-            getDoc,
-            arrayUnion,
-            arrayRemove
-        } from 'firebase/firestore';
+        {/* SHARE LINK SECTION (OWNER ONLY) */}
+        {mode === 'owner' && (
+          <div className="mt-4 flex items-center gap-2 text-xs bg-indigo-800/50 p-2 rounded-lg border border-indigo-400/30">
+            <LinkIcon size={14} className="text-indigo-200" />
+            <span className="truncate flex-1 text-indigo-100">Link zum Teilen bereit</span>
+            <button 
+              onClick={handleShare}
+              className="bg-white text-indigo-700 px-3 py-1.5 rounded shadow-sm hover:bg-indigo-50 font-medium flex items-center gap-1"
+            >
+              <Share2 size={12} /> Teilen / Kopieren
+            </button>
+          </div>
+        )}
 
-        // --- FIREBASE KONFIGURATION ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAHbZj73RUzb9HzXfaaZXU4E03CV14KfYo",
-            authDomain: "wunschliste-f6271.firebaseapp.com",
-            projectId: "wunschliste-f6271",
-            storageBucket: "wunschliste-f6271.firebasestorage.app",
-            messagingSenderId: "802607999884",
-            appId: "1:802607999884:web:f7cef06a2da60d0ace44a9",
-            measurementId: "G-4NHT3SRWES"
-        };
+        {mode === 'guest' && (
+           <div className="mt-4">
+             <div className="flex justify-between text-xs mb-1 opacity-90"><span>Geschenke-Fortschritt</span><span>{Math.round(progress)}%</span></div>
+             <div className="h-2 bg-emerald-900/30 rounded-full overflow-hidden"><div className="h-full bg-emerald-300 transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}></div></div>
+           </div>
+        )}
+      </div>
 
-        // Initialisierung
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        // App ID für Firestore Pfade (Fallback)
-        const appId = 'wunschliste-live-app';
+      {mode === 'guest' && (
+        <div className="flex bg-slate-100 p-1 mx-4 -mt-6 rounded-xl relative z-20 shadow-sm mb-4">
+          <button onClick={() => setActiveTab('wishes')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'wishes' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><Gift size={16} /> Wünsche</button>
+          <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'chat' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><MessageCircle size={16} /> Lounge</button>
+        </div>
+      )}
 
-        // --- HELPER: SAFE URL UPDATE ---
-        const safeUpdateURL = (param) => {
-            try {
-                const url = param ? `?list=${param}` : window.location.pathname;
-                // Wir prüfen, ob wir history nutzen dürfen (in manchen Sandboxes verboten)
-                window.history.pushState({}, '', url);
-            } catch (e) {
-                console.warn("URL Update suppressed:", e);
-            }
-        };
+      <div className="flex-1 overflow-y-auto px-4 pb-20">
+        {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && (
+          <div className="space-y-4 pt-2">
+            {visibleItems.length === 0 && <div className="text-center py-12 text-slate-400"><Gift className="w-12 h-12 mx-auto mb-2 opacity-20" /><p>Noch keine Wünsche eingetragen.</p></div>}
+            {visibleItems.map(item => <WishListItem key={item.id} item={item} mode={mode} currentUserUid={user?.uid} guestName={guestName} onDelete={handleDeleteItem} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} />)}
+          </div>
+        )}
+        {mode === 'guest' && activeTab === 'chat' && <ChatArea messages={messages} guestName={guestName} onSend={handleSendMessage} currentUserUid={user?.uid} />}
+      </div>
 
-        // --- HELPER: SORTING ---
-        const sortByDateDesc = (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-        const sortByDateAsc = (a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+      {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && <AddItemInput currentMode={mode} onAdd={handleAddItem} />}
+    </div>
+  );
+}
 
-        // --- COMPONENTS ---
+// --- APP CONTROLLER ---
 
-        const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onToggleReservation, onToggleBought }) => {
-            const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
-            const contributorCount = item.contributors?.length || 0;
-            const contributorNames = item.contributors?.map(c => c.name).join(', ');
-            const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
-            const isReservedByMe = item.reservedBy?.uid === currentUserUid;
-            const isReserved = !!item.reservedBy;
-            const isFullyReserved = isReserved && !isGroupMode;
-            
-            return (
-                <div className={`bg-white border rounded-xl p-4 transition-all shadow-sm hover:shadow-md mb-3 ${
-                item.isSecret ? 'border-amber-200 bg-amber-50/50' : 
-                item.isBought ? 'border-emerald-200 bg-emerald-50/40' :
-                isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'
-                }`}>
-                <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                    <div className="flex flex-wrap gap-2 mb-1">
-                        {item.isSecret && (
-                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded">
-                            <Sparkles size={10} /> Überraschung
-                        </span>
-                        )}
-                        {isGroupMode && (
-                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded">
-                            <PieChart size={10} /> Sammelgeschenk
-                        </span>
-                        )}
-                        {item.isBought && (
-                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded">
-                            <ShoppingBag size={10} /> Bereits Gekauft
-                        </span>
-                        )}
-                    </div>
-                    
-                    <h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved && currentMode === 'guest' && !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                        {item.title}
-                    </h3>
-                    
-                    <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">
-                        {item.price && <span>{item.price}</span>}
-                        {item.link && (
-                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline flex items-center gap-1">Link öffnen &rarr;</a>
-                        )}
-                    </div>
-                    </div>
+export default function App() {
+  const [user, setUser] = useState(null); 
+  const [viewMode, setViewMode] = useState('landing');
+  const [activeListData, setActiveListData] = useState(null);
+  const [guestName, setGuestName] = useState(() => {
+    try { return localStorage.getItem('wishlist_guest_name') || '' } catch(e) { return '' }
+  });
+  const [loading, setLoading] = useState(true);
+  const [userLists, setUserLists] = useState([]);
 
-                    {currentMode === 'owner' && (
-                    <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2">
-                        <Trash2 size={16} />
-                    </button>
-                    )}
-                </div>
+  useEffect(() => {
+    try { localStorage.setItem('wishlist_guest_name', guestName); } catch(e) {}
+  }, [guestName]);
 
-                {currentMode === 'guest' && (
-                    <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                    
-                    {isGroupMode ? (
-                        <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm flex-1">
-                            <div className="text-blue-600 flex flex-wrap gap-1 items-center">
-                            <Users size={12} />
-                            <span>{contributorCount} {contributorCount === 1 ? 'macht' : 'machen'} mit:</span>
-                            <span className="font-semibold text-slate-700 text-xs">{contributorNames}</span>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            {isContributer && (
-                            <button 
-                                onClick={() => onToggleBought(item)}
-                                className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
-                                title={item.isBought ? "Als nicht gekauft markieren" : "Als gekauft markieren"}
-                            >
-                                <ShoppingBag size={16} />
-                            </button>
-                            )}
-                            <button
-                            onClick={() => onToggleReservation(item, 'group')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                                isContributer 
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'
-                            }`}
-                            >
-                            {isContributer ? 'Verlassen' : 'Beteiligen'}
-                            </button>
-                        </div>
-                        </div>
-                    ) : isReserved ? (
-                        <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className={`flex items-center justify-center w-6 h-6 rounded-full ${item.isBought ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-600'}`}>
-                            {item.isBought ? <Check size={12} /> : <Lock size={12} />}
-                            </span>
-                            <span className="text-slate-500">
-                            {item.isBought ? 'Gekauft von:' : 'Reserviert:'} <span className="font-semibold text-slate-700">{isReservedByMe ? 'Du' : item.reservedBy.name}</span>
-                            </span>
-                        </div>
-                        {isReservedByMe && (
-                            <div className="flex gap-2">
-                            <button 
-                                onClick={() => onToggleBought(item)}
-                                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
-                                item.isBought 
-                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                                : 'bg-white border border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-600'
-                                }`}
-                            >
-                                {item.isBought ? 'Erledigt' : 'Kaufen?'}
-                            </button>
-                            <button
-                                onClick={() => onToggleReservation(item, 'single')}
-                                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                            >
-                                Freigeben
-                            </button>
-                            </div>
-                        )}
-                        </div>
-                    ) : (
-                        <div className="flex gap-2">
-                        <button
-                            onClick={() => onToggleReservation(item, 'single')}
-                            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"
-                        >
-                            <CheckCircle size={14} /> Reservieren
-                        </button>
-                        <button
-                            onClick={() => onToggleReservation(item, 'group')}
-                            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"
-                        >
-                            <PieChart size={14} /> Sammeln
-                        </button>
-                        </div>
-                    )}
-                    </div>
-                )}
-                </div>
-            );
-        };
+  useEffect(() => {
+    const initAuth = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const listIdFromUrl = params.get('list');
 
-        const ChatArea = ({ messages, guestName, onSend, currentUserUid }) => {
-            const [newMessage, setNewMessage] = useState('');
+      try {
+        await new Promise(resolve => {
+          const unsub = onAuthStateChanged(auth, (u) => {
+            unsub();
+            resolve(u);
+          });
+        });
 
-            const handleSend = () => {
-                if (!newMessage.trim()) return;
-                onSend(newMessage);
-                setNewMessage('');
-            };
-
-            return (
-                <div className="flex flex-col h-full pt-2">
-                <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg mb-4 text-xs text-amber-800 flex gap-2">
-                    <EyeOff size={16} className="shrink-0" />
-                    <div><strong>Pssst!</strong> Ersteller sieht das nicht.</div>
-                </div>
-                <div className="flex-1 space-y-3 mb-4 overflow-y-auto max-h-[50vh]">
-                    {messages.length === 0 && <div className="text-center text-slate-400 text-sm mt-8">Keine Nachrichten.</div>}
-                    {messages.map(msg => {
-                    const isMe = msg.uid === currentUserUid || msg.sender === guestName;
-                    return (
-                        <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                        <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-emerald-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>
-                            {msg.text}
-                        </div>
-                        <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.sender}</span>
-                        </div>
-                    );
-                    })}
-                </div>
-                <div className="sticky bottom-0 bg-white p-2 border-t flex gap-2">
-                    <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Nachricht..." className="flex-1 px-4 py-2 bg-slate-100 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
-                    <button onClick={handleSend} className="p-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700"><Send size={18} /></button>
-                </div>
-                </div>
-            );
-        };
-
-        const AddItemInput = ({ currentMode, onAdd }) => {
-            const [text, setText] = useState('');
-            const [price, setPrice] = useState('');
-            const [link, setLink] = useState('');
-
-            const handleAdd = () => {
-                if(!text) return;
-                onAdd({
-                title: text, price, link,
-                isSecret: currentMode === 'guest'
-                });
-                setText(''); setPrice(''); setLink('');
-            }
-
-            return (
-                <div className="sticky bottom-0 bg-white/90 backdrop-blur-md p-4 border-t border-slate-100 shadow-lg">
-                <div className="flex flex-col gap-2">
-                    <div className="flex gap-2 items-center">
-                    <input value={text} onChange={(e) => setText(e.target.value)} placeholder={currentMode === 'owner' ? "Neuer Wunsch..." : "Überraschungs-Idee..."} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner" />
-                    <button onClick={handleAdd} disabled={!text} className={`p-3 rounded-xl text-white shadow-lg transform active:scale-95 transition-all ${currentMode === 'owner' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-200'}`}>
-                        {currentMode === 'owner' ? <Plus size={24} /> : <Sparkles size={24} />}
-                    </button>
-                    </div>
-                    {currentMode === 'owner' && (
-                    <div className="flex gap-2 items-center text-xs animate-in slide-in-from-bottom-2 fade-in duration-300">
-                        <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Preis (opt)" className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link (opt)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
-                    )}
-                </div>
-                </div>
-            );
-        };
-
-        const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [isRegister, setIsRegister] = useState(false);
-            const [error, setError] = useState(null); 
-            const [currentDomain, setCurrentDomain] = useState('');
-            const [verificationSent, setVerificationSent] = useState(false);
-
-            useEffect(() => {
-                if (typeof window !== 'undefined') {
-                setCurrentDomain(window.location.hostname);
-                }
-            }, []);
-
-            useEffect(() => {
-                if (isOpen) {
-                setVerificationSent(false);
-                setError(null);
-                }
-            }, [isOpen]);
-
-            if (!isOpen) return null;
-
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setError(null);
-                try {
-                if (isRegister) {
-                    const userCredential = await onRegister(email, password);
-                    await sendEmailVerification(userCredential.user);
-                    await signOut(auth);
-                    setVerificationSent(true);
-                } else {
-                    const userCredential = await onLogin(email, password);
-                    if (!userCredential.user.emailVerified) {
-                    await signOut(auth);
-                    setError({ msg: "Bitte bestätige erst deine E-Mail-Adresse!", code: 'auth/unverified-email' });
-                    return;
-                    }
-                    onClose();
-                }
-                } catch (err) {
-                let msg = `Fehler: ${err.message}`;
-                if (err.code === 'auth/invalid-credential') msg = "E-Mail oder Passwort falsch."; 
-                setError({ msg, code: err.code });
-                }
-            };
-
-            if (verificationSent) {
-                return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl text-center">
-                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><Mail size={32} /></div>
-                    <h2 className="text-2xl font-bold mb-2 text-slate-800">Fast geschafft!</h2>
-                    <p className="text-slate-600 mb-6">Wir haben eine Bestätigungs-E-Mail an <strong>{email}</strong> gesendet. Bitte klicke auf den Link darin.</p>
-                    <button onClick={() => { setVerificationSent(false); setIsRegister(false); }} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors">Zurück zum Login</button>
-                    </div>
-                </div>
-                );
-            }
-
-            return (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">✕</button>
-                    <h2 className="text-xl font-bold mb-1">{isRegister ? 'Konto erstellen' : 'Anmelden'}</h2>
-                    <p className="text-slate-500 text-sm mb-4">{isRegister ? 'Zum dauerhaften Speichern deiner Listen.' : 'Willkommen zurück!'}</p>
-                    
-                    {error && (
-                    <div className="bg-red-50 border border-red-100 text-red-600 text-xs p-3 rounded-lg mb-4 font-bold">
-                        {error.msg}
-                    </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="relative">
-                        <Mail className="absolute left-3 top-3 text-slate-400" size={16} />
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-Mail Adresse" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required />
-                    </div>
-                    <div className="relative">
-                        <Key className="absolute left-3 top-3 text-slate-400" size={16} />
-                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passwort" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required minLength={6} />
-                    </div>
-                    <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200">{isRegister ? 'Kostenlos registrieren' : 'Einloggen'}</button>
-                    </form>
-                    <div className="mt-4 text-center text-sm text-slate-500">{isRegister ? 'Schon ein Konto?' : 'Noch kein Konto?'} <button onClick={() => setIsRegister(!isRegister)} className="ml-1 text-indigo-600 font-semibold hover:underline">{isRegister ? 'Hier einloggen' : 'Jetzt registrieren'} </button></div>
-                </div>
-                </div>
-            );
-        };
-
-        function InviteScreen({ listData, onJoin }) {
-            const [joinName, setJoinName] = useState('');
-
-            return (
-                <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-slate-50">
-                <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-300">
-                    <div className="bg-emerald-600 p-8 text-center text-white">
-                    <Gift className="w-12 h-12 mx-auto mb-3 text-emerald-100" />
-                    <h2 className="text-xl font-medium text-emerald-100 mb-1">Du bist eingeladen zu</h2>
-                    <h1 className="text-3xl font-bold">{listData.title}</h1>
-                    <p className="text-sm opacity-80 mt-2">{listData.eventDate && new Date(listData.eventDate).toLocaleDateString('de-DE')}</p>
-                    </div>
-                    <div className="p-8 space-y-4">
-                    <p className="text-center text-slate-600 text-sm">Bitte gib deinen Namen ein, um die Wunschliste zu sehen und Geschenke zu reservieren.</p>
-                    <input 
-                        type="text" 
-                        value={joinName} 
-                        onChange={(e) => setJoinName(e.target.value)} 
-                        placeholder="Dein Name" 
-                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none text-center text-lg" 
-                        autoFocus
-                    />
-                    <button 
-                        disabled={!joinName}
-                        onClick={() => onJoin(listData.id, joinName)} 
-                        className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 transition-all shadow-lg shadow-emerald-200"
-                    >
-                        Liste öffnen &rarr;
-                    </button>
-                    </div>
-                </div>
-                </div>
-            );
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
         }
+      } catch (e) {
+        console.error("Auth Init Error", e);
+      }
 
-        function LandingPage({ onCreate, onJoin, user, onLogin, onRegister, onLogout, myLists, onOpenList, onDeleteList }) {
-            const [title, setTitle] = useState('');
-            const [date, setDate] = useState('');
-            const [joinId, setJoinId] = useState('');
-            const [showAuthModal, setShowAuthModal] = useState(false);
-            const [showJoinInput, setShowJoinInput] = useState(false);
-
-            return (
-                <div className="flex flex-col min-h-screen bg-slate-50 relative">
-                <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLogin={onLogin} onRegister={onRegister} />
-
-                {/* Header */}
-                <div className="bg-white/80 backdrop-blur sticky top-0 z-20 border-b border-slate-200 p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                    <div className="bg-indigo-600 p-1.5 rounded-lg text-white"><Gift size={18} /></div>
-                    <h1 className="font-bold text-slate-800 tracking-tight">WunschWelle</h1>
-                    </div>
-                    
-                    {!user || user.isAnonymous ? (
-                    <button onClick={() => setShowAuthModal(true)} className="text-sm font-medium text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors">
-                        Anmelden
-                    </button>
-                    ) : (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span>
-                        <button onClick={onLogout} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><LogOut size={16} /></button>
-                    </div>
-                    )}
-                </div>
-
-                <div className="flex-1 p-4 max-w-md mx-auto w-full flex flex-col">
-                    
-                    {/* --- SECTION 1: CREATE NEW --- */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-                    <div className="bg-indigo-600 p-6 text-white text-center">
-                        <h2 className="text-2xl font-bold mb-2">Wünsche erfüllen.</h2>
-                        <p className="text-indigo-100 text-sm">Erstelle deine Liste und teile sie mit Freunden.</p>
-                    </div>
-                    <div className="p-6 space-y-4">
-                        <div>
-                        <label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Titel</label>
-                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="z.B. Mein Geburtstag" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" />
-                        </div>
-                        <div>
-                        <label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Wann?</label>
-                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" />
-                        </div>
-                        <button disabled={!title} onClick={() => onCreate(title, date)} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
-                        <Plus size={20} /> Liste starten
-                        </button>
-                    </div>
-                    </div>
-
-                    {/* --- SECTION 2: MY LISTS --- */}
-                    {user && (
-                    <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                        <List size={16} className="text-indigo-500" /> Deine Listen
-                        </h3>
-                        
-                        {(!myLists || myLists.length === 0) ? (
-                            <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
-                                <p className="text-slate-400 text-sm mb-1">Noch keine Listen erstellt.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                            {myLists.map(list => (
-                                <div key={list.id} onClick={() => onOpenList(list)} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer flex items-center justify-between group">
-                                <div>
-                                    <div className="font-bold text-slate-800">{list.title}</div>
-                                    <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                                    <Calendar size={10} /> {list.eventDate ? new Date(list.eventDate).toLocaleDateString('de-DE') : 'Kein Datum'}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={(e) => { e.stopPropagation(); onDeleteList(list.id); }} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
-                                    <ChevronRight size={20} className="text-slate-300" />
-                                </div>
-                                </div>
-                            ))}
-                            </div>
-                        )}
-                    </div>
-                    )}
-
-                    {/* --- SECTION 3: JOIN MANUALLY --- */}
-                    <div className="mt-auto pt-8 text-center pb-8">
-                    {!showJoinInput ? (
-                        <button onClick={() => setShowJoinInput(true)} className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1 mx-auto transition-colors">
-                        <Search size={14} /> Code eingeben?
-                        </button>
-                    ) : (
-                        <div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2">
-                        <input type="text" value={joinId} onChange={(e) => setJoinId(e.target.value)} placeholder="Code..." className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-indigo-500" autoFocus />
-                        <button disabled={!joinId} onClick={() => onJoin(joinId, "Gast")} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50"><ArrowRight size={16} /></button>
-                        </div>
-                    )}
-                    </div>
-
-                </div>
-                </div>
-            );
+      if (listIdFromUrl) {
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listIdFromUrl);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            setActiveListData({ id: snap.id, ...snap.data() });
+            setViewMode('invite-screen'); 
+          }
+        } catch (e) { console.error("URL Load Error:", e); }
+      }
+      setLoading(false);
+    };
+    initAuth();
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      // Auto-switch based on ownership
+      if (u && activeListData) {
+        if (u.uid === activeListData.ownerId) {
+          setViewMode('list-owner');
         }
+      }
+    });
+  }, [activeListData?.id]); 
 
-        function WishListDashboard({ listData, mode, guestName, onBack, user }) {
-            const [items, setItems] = useState([]);
-            const [messages, setMessages] = useState([]);
-            const [activeTab, setActiveTab] = useState('wishes');
+  useEffect(() => {
+    if (!user) {
+      setUserLists([]);
+      return;
+    }
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'lists');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allLists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const myLists = allLists.filter(l => l.ownerId === user.uid).sort(sortByDateDesc);
+      setUserLists(myLists);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
-            // --- REAL FIRESTORE LISTENERS ---
-            useEffect(() => {
-                if (!listData?.id) return;
+  const handleEmailLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
+  const handleRegister = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+  const handleLogout = async () => {
+    await signOut(auth);
+    await signInAnonymously(auth);
+    setViewMode('landing');
+    safeUpdateURL('');
+  };
 
-                // 1. ITEMS LISTENER
-                const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`);
-                const unsubItems = onSnapshot(itemsRef, (snapshot) => {
-                const loadedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                loadedItems.sort(sortByDateDesc);
-                setItems(loadedItems);
-                }, (error) => console.error("Items Error:", error));
+  const handleCreateList = async (title, date) => {
+    if (!user) return;
+    try {
+      const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'lists'), {
+        title,
+        eventDate: date,
+        ownerId: user.uid,
+        createdAt: serverTimestamp()
+      });
+      const newList = { id: docRef.id, title, eventDate: date, ownerId: user.uid };
+      setActiveListData(newList);
+      setViewMode('list-owner');
+      safeUpdateURL(docRef.id);
+    } catch (e) {
+      console.error("Create List Error:", e);
+      alert("Fehler beim Erstellen der Liste.");
+    }
+  };
 
-                // 2. CHAT LISTENER
-                const chatRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`);
-                const unsubChat = onSnapshot(chatRef, (snapshot) => {
-                const loadedMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                loadedMsgs.sort(sortByDateAsc); // Chat needs ASC order
-                setMessages(loadedMsgs);
-                }, (error) => console.error("Chat Error:", error));
-
-                return () => {
-                unsubItems();
-                unsubChat();
-                };
-            }, [listData]);
-
-            // --- ACTIONS ---
-            
-            const handleAddItem = async (newItem) => {
-                if (!user) return;
-                try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`), {
-                    ...newItem,
-                    createdAt: serverTimestamp(),
-                    contributors: [],
-                    reservedBy: null,
-                    addedBy: mode === 'guest' ? guestName : 'Owner'
-                });
-                } catch (e) {
-                console.error("Add Item Error:", e);
-                alert("Fehler beim Hinzufügen.");
-                }
-            };
-
-            const handleDeleteItem = async (id) => {
-                if (!user) return;
-                try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, id));
-                } catch (e) {
-                console.error("Delete Error:", e);
-                }
-            };
-
-            const handleToggleReservation = async (item, type = 'single') => {
-                if (!user) return;
-                // Check if guest name exists
-                if (!guestName || guestName.trim() === '') {
-                alert("Bitte gib zuerst deinen Namen an (Login oder Gast-Zugang).");
-                return;
-                }
-
-                const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
-                const userObj = { uid: user.uid, name: guestName };
-                
-                try {
-                if (type === 'group' || (item.contributors && item.contributors.length > 0)) {
-                    const hasJoined = item.contributors?.some(c => c.uid === user.uid);
-                    
-                    let newContributors = item.contributors || [];
-                    if (hasJoined) {
-                    newContributors = newContributors.filter(c => c.uid !== user.uid);
-                    } else {
-                    newContributors.push(userObj);
-                    }
-                    
-                    await updateDoc(itemRef, { 
-                    contributors: newContributors,
-                    reservedBy: null 
-                    });
-
-                } else {
-                    const isReservedByMe = item.reservedBy?.uid === user.uid;
-                    if (item.reservedBy && !isReservedByMe) {
-                    alert("Bereits reserviert von " + item.reservedBy.name);
-                    return;
-                    }
-                    const newReservedBy = isReservedByMe ? null : userObj;
-                    await updateDoc(itemRef, { reservedBy: newReservedBy });
-                }
-                } catch (e) {
-                console.error("Reservation Error:", e);
-                alert("Konnte Reservierung nicht ändern. Bist du eingeloggt?");
-                }
-            };
-
-            const handleToggleBought = async (item) => {
-                if (!user) return;
-                try {
-                const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
-                await updateDoc(itemRef, { isBought: !item.isBought });
-                } catch(e) {
-                console.error("Buying Error:", e);
-                }
-            };
-
-            const handleSendMessage = async (text) => {
-                if (!user) return;
-                try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`), {
-                    text,
-                    sender: guestName,
-                    uid: user.uid, // Save UID for better identification
-                    createdAt: serverTimestamp()
-                });
-                } catch (e) {
-                console.error("Send Msg Error:", e);
-                }
-            };
-
-            const getDaysLeft = () => {
-                if (!listData?.eventDate) return null;
-                const diff = new Date(listData.eventDate) - new Date();
-                return Math.ceil(diff / (1000 * 60 * 60 * 24));
-            };
-            const daysLeft = getDaysLeft();
-            
-            const visibleItems = items.filter(item => mode === 'owner' ? !item.isSecret : true);
-            const totalItems = visibleItems.filter(i => !i.isSecret).length;
-            // Done = Bought OR (Group > 0)
-            const doneItems = visibleItems.filter(i => !i.isSecret && (item.isBought || (item.contributors && item.contributors.length > 0))).length;
-            const progress = totalItems > 0 ? (doneItems / totalItems) * 100 : 0;
-
-            // SHARE FUNCTION (SAFE)
-            const handleShare = () => {
-                try {
-                const url = `${window.location.origin}${window.location.pathname}?list=${listData.id}`;
-                navigator.clipboard.writeText(url);
-                alert("Link in Zwischenablage kopiert!");
-                } catch (e) {
-                alert("ID zum Teilen: " + listData.id);
-                }
-            };
-
-            return (
-                <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative flex flex-col">
-                <div className={`${mode === 'owner' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white p-6 pb-12 rounded-b-3xl shadow-lg relative z-10 transition-colors duration-500`}>
-                    <div className="flex justify-between items-start mb-4">
-                    <button onClick={onBack} className="opacity-80 hover:opacity-100 text-sm flex items-center gap-1">&larr; Zurück</button>
-                    
-                    {/* USER INFO BADGE */}
-                    <div className="text-xs bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
-                        <User size={10} />
-                        {mode === 'owner' ? 'Ersteller-Ansicht' : `Gast: ${guestName}`}
-                    </div>
-                    </div>
-                    <div className="flex justify-between items-end">
-                    <div>
-                        <h1 className="text-2xl font-bold mb-1">{listData.title}</h1>
-                        <p className="opacity-90 text-sm flex items-center gap-2">
-                        {listData.eventDate && new Date(listData.eventDate).toLocaleDateString('de-DE')} 
-                        </p>
-                    </div>
-                    {daysLeft !== null && (
-                        <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center min-w-[70px]">
-                        <span className="block text-2xl font-bold leading-none">{daysLeft > 0 ? daysLeft : 0}</span>
-                        <span className="text-[10px] uppercase tracking-wide opacity-80">Tage</span>
-                        </div>
-                    )}
-                    </div>
-                    
-                    {/* SHARE LINK SECTION (OWNER ONLY) */}
-                    {mode === 'owner' && (
-                    <div className="mt-4 flex items-center gap-2 text-xs bg-indigo-800/50 p-2 rounded-lg border border-indigo-400/30">
-                        <LinkIcon size={14} className="text-indigo-200" />
-                        <span className="truncate flex-1 text-indigo-100">Link zum Teilen bereit</span>
-                        <button 
-                        onClick={handleShare}
-                        className="bg-white text-indigo-700 px-3 py-1.5 rounded shadow-sm hover:bg-indigo-50 font-medium flex items-center gap-1"
-                        >
-                        <Copy size={12} /> Link kopieren
-                        </button>
-                    </div>
-                    )}
-
-                    {mode === 'guest' && (
-                    <div className="mt-4">
-                        <div className="flex justify-between text-xs mb-1 opacity-90"><span>Geschenke-Fortschritt</span><span>{Math.round(progress)}%</span></div>
-                        <div className="h-2 bg-emerald-900/30 rounded-full overflow-hidden"><div className="h-full bg-emerald-300 transition-all duration-1000 ease-out" style={{ width: `${progress}%` }}></div></div>
-                    </div>
-                    )}
-                </div>
-
-                {mode === 'guest' && (
-                    <div className="flex bg-slate-100 p-1 mx-4 -mt-6 rounded-xl relative z-20 shadow-sm mb-4">
-                    <button onClick={() => setActiveTab('wishes')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'wishes' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><Gift size={16} /> Wünsche</button>
-                    <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'chat' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><MessageCircle size={16} /> Lounge</button>
-                    </div>
-                )}
-
-                <div className="flex-1 overflow-y-auto px-4 pb-20">
-                    {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && (
-                    <div className="space-y-4 pt-2">
-                        {visibleItems.length === 0 && <div className="text-center py-12 text-slate-400"><Gift className="w-12 h-12 mx-auto mb-2 opacity-20" /><p>Noch keine Wünsche eingetragen.</p></div>}
-                        {visibleItems.map(item => <WishListItem key={item.id} item={item} mode={mode} currentUserUid={user?.uid} guestName={guestName} onDelete={handleDeleteItem} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} />)}
-                    </div>
-                    )}
-                    {mode === 'guest' && activeTab === 'chat' && <ChatArea messages={messages} guestName={guestName} onSend={handleSendMessage} currentUserUid={user?.uid} />}
-                </div>
-
-                {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && <AddItemInput currentMode={mode} onAdd={handleAddItem} />}
-                </div>
-            );
+  const handleJoinList = async (listId, name) => {
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        setActiveListData({ id: snap.id, ...snap.data() });
+        setGuestName(name);
+        // Check ownership again just in case
+        if (user && user.uid === snap.data().ownerId) {
+          setViewMode('list-owner');
+        } else {
+          setViewMode('list-guest');
         }
+        safeUpdateURL(snap.id);
+      } else {
+        alert("Liste nicht gefunden. Code überprüfen.");
+      }
+    } catch (e) {
+      console.error("Join Error:", e);
+      alert("Fehler beim Beitreten.");
+    }
+  };
 
-        // --- MAIN APP COMPONENT ---
-        function App() {
-            const [user, setUser] = useState(null); 
-            const [viewMode, setViewMode] = useState('landing');
-            const [activeListData, setActiveListData] = useState(null);
-            const [guestName, setGuestName] = useState(() => {
-                try { return localStorage.getItem('wishlist_guest_name') || '' } catch(e) { return '' }
-            });
-            const [loading, setLoading] = useState(true);
-            const [userLists, setUserLists] = useState([]);
+  const handleOpenList = (list) => {
+    setActiveListData(list);
+    if (user && list.ownerId === user.uid) {
+      setViewMode('list-owner');
+    } else {
+      setViewMode('invite-screen');
+    }
+    safeUpdateURL(list.id);
+  };
 
-            useEffect(() => {
-                try { localStorage.setItem('wishlist_guest_name', guestName); } catch(e) {}
-            }, [guestName]);
+  const handleDeleteList = async (listId) => {
+    if (!confirm("Möchtest du diese Liste wirklich löschen?")) return;
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId));
+    } catch (e) {
+      console.error("Delete List Error:", e);
+      alert("Fehler beim Löschen.");
+    }
+  };
 
-            useEffect(() => {
-                const initAuth = async () => {
-                    const params = new URLSearchParams(window.location.search);
-                    const listIdFromUrl = params.get('list');
+  if (loading) return <div className="h-screen flex items-center justify-center text-slate-400">Lade WunschWelle...</div>;
 
-                    try {
-                        // Prüfen ob schon eingeloggt
-                        await new Promise(resolve => {
-                            const unsub = onAuthStateChanged(auth, (u) => {
-                                unsub();
-                                resolve(u);
-                            });
-                        });
+  if (viewMode === 'landing') {
+    return (
+      <LandingPage 
+        onCreate={handleCreateList} 
+        onJoin={handleJoinList} 
+        user={user} 
+        onLogin={handleEmailLogin} 
+        onRegister={handleRegister} 
+        onLogout={handleLogout}
+        myLists={userLists} 
+        onOpenList={handleOpenList}
+        onDeleteList={handleDeleteList}
+      />
+    );
+  }
 
-                        if (!auth.currentUser) {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (e) {
-                        console.error("Auth Init Error", e);
-                    }
+  if (viewMode === 'invite-screen') {
+    return <InviteScreen listData={activeListData} onJoin={(id, name) => { 
+      setGuestName(name); 
+      // Final ownership check
+      if (user && activeListData && user.uid === activeListData.ownerId) {
+        setViewMode('list-owner');
+      } else {
+        setViewMode('list-guest'); 
+      }
+    }} />;
+  }
 
-                    if (listIdFromUrl) {
-                        try {
-                            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listIdFromUrl);
-                            const snap = await getDoc(docRef);
-                            if (snap.exists()) {
-                                setActiveListData({ id: snap.id, ...snap.data() });
-                                setViewMode('invite-screen'); 
-                            }
-                        } catch (e) { console.error("URL Load Error:", e); }
-                    }
-                    setLoading(false);
-                };
-                initAuth();
-                return onAuthStateChanged(auth, (u) => {
-                    setUser(u);
-                    // Automatische Modus-Wahl basierend auf Ownership
-                    if (u && activeListData) {
-                        if (u.uid === activeListData.ownerId) {
-                            setViewMode('list-owner');
-                        }
-                    }
-                });
-            }, [activeListData?.id]); 
+  // Fallback Logic
+  const currentMode = (user && activeListData && user.uid === activeListData.ownerId) ? 'owner' : 'guest';
 
-            useEffect(() => {
-                if (!user) {
-                    setUserLists([]);
-                    return;
-                }
-                const q = collection(db, 'artifacts', appId, 'public', 'data', 'lists');
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const allLists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const myLists = allLists.filter(l => l.ownerId === user.uid).sort(sortByDateDesc);
-                    setUserLists(myLists);
-                });
-                return () => unsubscribe();
-            }, [user]);
-
-            const handleEmailLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
-            const handleRegister = (email, password) => createUserWithEmailAndPassword(auth, email, password);
-            const handleLogout = async () => {
-                await signOut(auth);
-                await signInAnonymously(auth);
-                setViewMode('landing');
-                safeUpdateURL('');
-            };
-
-            const handleCreateList = async (title, date) => {
-                if (!user) return;
-                try {
-                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'lists'), {
-                        title,
-                        eventDate: date,
-                        ownerId: user.uid,
-                        createdAt: serverTimestamp()
-                    });
-                    const newList = { id: docRef.id, title, eventDate: date, ownerId: user.uid };
-                    setActiveListData(newList);
-                    setViewMode('list-owner');
-                    safeUpdateURL(docRef.id);
-                } catch (e) {
-                    console.error("Create List Error:", e);
-                    alert("Fehler beim Erstellen der Liste.");
-                }
-            };
-
-            const handleJoinList = async (listId, name) => {
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId);
-                    const snap = await getDoc(docRef);
-                    if (snap.exists()) {
-                        setActiveListData({ id: snap.id, ...snap.data() });
-                        setGuestName(name);
-                        // Check ownership
-                        if (user && user.uid === snap.data().ownerId) {
-                            setViewMode('list-owner');
-                        } else {
-                            setViewMode('list-guest');
-                        }
-                        safeUpdateURL(snap.id);
-                    } else {
-                        alert("Liste nicht gefunden. Code überprüfen.");
-                    }
-                } catch (e) {
-                    console.error("Join Error:", e);
-                    alert("Fehler beim Beitreten.");
-                }
-            };
-
-            const handleOpenList = (list) => {
-                setActiveListData(list);
-                if (user && list.ownerId === user.uid) {
-                    setViewMode('list-owner');
-                } else {
-                    setViewMode('invite-screen');
-                }
-                safeUpdateURL(list.id);
-            };
-
-            const handleDeleteList = async (listId) => {
-                if (!confirm("Möchtest du diese Liste wirklich löschen?")) return;
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId));
-                } catch (e) {
-                    console.error("Delete List Error:", e);
-                    alert("Fehler beim Löschen.");
-                }
-            };
-
-            if (loading) return <div className="h-screen flex items-center justify-center text-slate-400">Lade WunschWelle...</div>;
-
-            if (viewMode === 'landing') {
-                return (
-                    <LandingPage 
-                        onCreate={handleCreateList} 
-                        onJoin={handleJoinList} 
-                        user={user} 
-                        onLogin={handleEmailLogin} 
-                        onRegister={handleRegister} 
-                        onLogout={handleLogout}
-                        myLists={userLists} 
-                        onOpenList={handleOpenList}
-                        onDeleteList={handleDeleteList}
-                    />
-                );
-            }
-
-            if (viewMode === 'invite-screen') {
-                return <InviteScreen listData={activeListData} onJoin={(id, name) => { 
-                    setGuestName(name); 
-                    // Check again before setting mode
-                    if (user && activeListData && user.uid === activeListData.ownerId) {
-                        setViewMode('list-owner');
-                    } else {
-                        setViewMode('list-guest'); 
-                    }
-                }} />;
-            }
-
-            // Fallback: If we are in list-owner or list-guest mode
-            const currentMode = (user && activeListData && user.uid === activeListData.ownerId) ? 'owner' : 'guest';
-
-            return <WishListDashboard 
-                listData={activeListData} 
-                mode={currentMode} 
-                guestName={guestName} 
-                user={user} 
-                onBack={() => { setViewMode('landing'); safeUpdateURL(''); }} 
-            />;
-        }
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+  return <WishListDashboard 
+    listData={activeListData} 
+    mode={currentMode} 
+    guestName={guestName} 
+    user={user} 
+    onBack={() => { setViewMode('landing'); safeUpdateURL(''); }} 
+  />;
+}
