@@ -679,7 +679,7 @@
             const visibleItems = items.filter(item => mode === 'owner' ? !item.isSecret : true);
             const totalItems = visibleItems.filter(i => !i.isSecret).length;
             // Done = Bought OR (Group > 0)
-            const doneItems = visibleItems.filter(i => !i.isSecret && (item.isBought || (item.contributors && item.contributors.length > 0))).length;
+            const doneItems = visibleItems.filter(i => !i.isSecret && (i.isBought || (i.contributors && i.contributors.length > 0))).length;
             const progress = totalItems > 0 ? (doneItems / totalItems) * 100 : 0;
 
             // SHARE FUNCTION (SAFE)
