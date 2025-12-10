@@ -10,6 +10,9 @@
     
     <!-- 2. Babel für React (JSX) Übersetzung im Browser -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <!-- 3. Import Map: Definiert, woher der Browser React & Co. lädt -->
     <script type="importmap">
@@ -31,6 +34,11 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Hide scrollbar for category list */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
         body { background-color: #f8fafc; }
         
         /* Animation Utilities */
@@ -43,14 +51,16 @@
 
     <!-- 4. Der eigentliche App Code als Babel-Script -->
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo } from 'react';
+        import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { 
             Plus, Trash2, Gift, MessageCircle, CheckCircle, 
             Share2, Lock, EyeOff, Users, Send, Sparkles, 
             LogOut, User, PieChart, Mail, Key, 
             Check, Link as LinkIcon, 
-            ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight, Copy, Hash
+            ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight, Copy, Hash, 
+            Image as ImageIcon, Heart, Lightbulb, ThumbsUp,
+            Smartphone, Shirt, Home, BookOpen, Coffee, Music, Smile, Star
         } from 'lucide-react';
         
         import { initializeApp } from 'firebase/app';
@@ -72,11 +82,9 @@
             updateDoc, 
             deleteDoc, 
             serverTimestamp,
-            getDoc,
-            arrayUnion,
-            arrayRemove
+            getDoc
         } from 'firebase/firestore';
-
+        
         // --- FIREBASE KONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyAHbZj73RUzb9HzXfaaZXU4E03CV14KfYo",
@@ -92,7 +100,28 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'wunschliste-live-app'; // Feste ID für Prod
+        const appId = 'wunschliste-live-app';
+
+        // --- HELPER: CATEGORIES ---
+        const CATEGORIES = [
+            { id: 'general', label: 'Allgemein', icon: Star },
+            { id: 'tech', label: 'Technik', icon: Smartphone },
+            { id: 'home', label: 'Haushalt', icon: Home },
+            { id: 'clothing', label: 'Kleidung', icon: Shirt },
+            { id: 'books', label: 'Bücher', icon: BookOpen },
+            { id: 'hobby', label: 'Hobby', icon: Smile },
+            { id: 'food', label: 'Essen & Trinken', icon: Coffee },
+        ];
+
+        const getCategoryIcon = (id) => {
+            const cat = CATEGORIES.find(c => c.id === id);
+            return cat ? cat.icon : Star;
+        };
+
+        const getCategoryLabel = (id) => {
+            const cat = CATEGORIES.find(c => c.id === id);
+            return cat ? cat.label : 'Allgemein';
+        };
 
         // --- HELPER: SAFE URL UPDATE ---
         const safeUpdateURL = (param) => {
@@ -103,12 +132,47 @@
                 console.warn("URL Update suppressed:", e);
             }
         };
+        
+        // --- HELPER: CONFETTI ---
+        const triggerConfetti = () => {
+            if (typeof window.confetti === 'function') {
+                window.confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
+                });
+            }
+        };
 
         // --- HELPER: SORTING ---
+        const getPriorityWeight = (p) => {
+            if (p === 'high') return 3;
+            if (p === 'medium') return 2;
+            if (p === 'low') return 1;
+            return 2; 
+        };
+
+        const sortItems = (a, b) => {
+            const weightA = getPriorityWeight(a.priority);
+            const weightB = getPriorityWeight(b.priority);
+            
+            if (weightA !== weightB) {
+                return weightB - weightA; 
+            }
+            return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+        };
+        
         const sortByDateDesc = (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
         const sortByDateAsc = (a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
 
         // --- COMPONENTS ---
+
+        const PriorityBadge = ({ priority }) => {
+            if (priority === 'high') return <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><Heart size={10} fill="currentColor" /> Herzenswunsch</span>;
+            if (priority === 'low') return <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><Lightbulb size={10} /> Nur eine Idee</span>;
+            return null;
+        };
 
         const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onToggleReservation, onToggleBought }) => {
             const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
@@ -119,15 +183,35 @@
             const isReserved = !!item.reservedBy;
             const isFullyReserved = isReserved && !isGroupMode;
             
+            const CategoryIcon = getCategoryIcon(item.category);
+
             return (
-                <div className={`bg-white border rounded-xl p-4 transition-all shadow-sm hover:shadow-md mb-3 ${
+                <div className={`bg-white border rounded-xl overflow-hidden transition-all shadow-sm hover:shadow-md mb-3 ${
                 item.isSecret ? 'border-amber-200 bg-amber-50/50' : 
                 item.isBought ? 'border-emerald-200 bg-emerald-50/40' :
                 isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'
                 }`}>
+                
+                {/* Image Section */}
+                {item.image && (
+                    <div className="h-32 w-full overflow-hidden relative group">
+                        <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                        {item.price && <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">{item.price}</span>}
+                    </div>
+                )}
+
+                <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
                     <div className="flex flex-wrap gap-2 mb-1">
+                        <PriorityBadge priority={item.priority} />
+                        
+                        {/* Category Badge */}
+                        <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <CategoryIcon size={10} /> {getCategoryLabel(item.category)}
+                        </span>
+
                         {item.isSecret && (
                         <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded">
                             <Sparkles size={10} /> Überraschung
@@ -150,7 +234,7 @@
                     </h3>
                     
                     <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">
-                        {item.price && <span>{item.price}</span>}
+                        {!item.image && item.price && <span>{item.price}</span>}
                         {item.link && (
                         <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline flex items-center gap-1">Link öffnen &rarr;</a>
                         )}
@@ -248,6 +332,7 @@
                     </div>
                 )}
                 </div>
+                </div>
             );
         };
 
@@ -292,14 +377,17 @@
             const [text, setText] = useState('');
             const [price, setPrice] = useState('');
             const [link, setLink] = useState('');
+            const [image, setImage] = useState('');
+            const [priority, setPriority] = useState('medium'); 
+            const [category, setCategory] = useState('general');
 
             const handleAdd = () => {
                 if(!text) return;
                 onAdd({
-                title: text, price, link,
+                title: text, price, link, image, priority, category,
                 isSecret: currentMode === 'guest'
                 });
-                setText(''); setPrice(''); setLink('');
+                setText(''); setPrice(''); setLink(''); setImage(''); setPriority('medium'); setCategory('general');
             }
 
             return (
@@ -312,9 +400,38 @@
                     </button>
                     </div>
                     {currentMode === 'owner' && (
-                    <div className="flex gap-2 items-center text-xs animate-in slide-in-from-bottom-2 fade-in duration-300">
-                        <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Preis (opt)" className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link (opt)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <div className="flex flex-col gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
+                        {/* Upper Row: Price, Category, Priority */}
+                        <div className="flex gap-2 items-center">
+                            <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Preis" className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                            
+                            {/* Category Selector */}
+                            <select 
+                                value={category} 
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm flex-1"
+                            >
+                                {CATEGORIES.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
+                                ))}
+                            </select>
+
+                            {/* Priority Selector */}
+                            <div className="flex bg-slate-50 rounded-lg p-1 border border-slate-200 shrink-0">
+                                <button onClick={() => setPriority('high')} className={`p-1.5 rounded-md transition-all ${priority === 'high' ? 'bg-white shadow text-red-500' : 'text-slate-400 hover:text-slate-600'}`} title="Herzenswunsch"><Heart size={16} fill={priority === 'high' ? "currentColor" : "none"} /></button>
+                                <button onClick={() => setPriority('medium')} className={`p-1.5 rounded-md transition-all ${priority === 'medium' ? 'bg-white shadow text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`} title="Gerne"><ThumbsUp size={16} /></button>
+                                <button onClick={() => setPriority('low')} className={`p-1.5 rounded-md transition-all ${priority === 'low' ? 'bg-white shadow text-yellow-500' : 'text-slate-400 hover:text-slate-600'}`} title="Idee"><Lightbulb size={16} /></button>
+                            </div>
+                        </div>
+                        
+                        {/* Lower Row: Link & Image */}
+                        <div className="flex gap-2">
+                            <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link (opt)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                            <div className="relative flex-1">
+                                <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="Bild-URL (opt)" className="w-full pl-8 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                                <ImageIcon size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                            </div>
+                        </div>
                     </div>
                     )}
                 </div>
@@ -562,6 +679,7 @@
             const [items, setItems] = useState([]);
             const [messages, setMessages] = useState([]);
             const [activeTab, setActiveTab] = useState('wishes');
+            const [activeCategory, setActiveCategory] = useState('all'); // NEU: Category State
 
             // --- REAL FIRESTORE LISTENERS ---
             useEffect(() => {
@@ -571,7 +689,10 @@
                 const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`);
                 const unsubItems = onSnapshot(itemsRef, (snapshot) => {
                 const loadedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                loadedItems.sort(sortByDateDesc);
+                
+                // NEU: Sortierung nach Prio (Custom) dann Datum
+                loadedItems.sort(sortItems);
+                
                 setItems(loadedItems);
                 }, (error) => console.error("Items Error:", error));
 
@@ -636,6 +757,8 @@
                     newContributors = newContributors.filter(c => c.uid !== user.uid);
                     } else {
                     newContributors.push(userObj);
+                    // CONFETTI ON JOIN
+                    triggerConfetti();
                     }
                     
                     await updateDoc(itemRef, { 
@@ -650,6 +773,8 @@
                     return;
                     }
                     const newReservedBy = isReservedByMe ? null : userObj;
+                    // CONFETTI ON RESERVE
+                    if (!isReservedByMe) triggerConfetti();
                     await updateDoc(itemRef, { reservedBy: newReservedBy });
                 }
                 } catch (e) {
@@ -662,6 +787,8 @@
                 if (!user) return;
                 try {
                 const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
+                // CONFETTI ON BUY
+                if (!item.isBought) triggerConfetti();
                 await updateDoc(itemRef, { isBought: !item.isBought });
                 } catch(e) {
                 console.error("Buying Error:", e);
@@ -689,10 +816,15 @@
             };
             const daysLeft = getDaysLeft();
             
-            const visibleItems = items.filter(item => mode === 'owner' ? !item.isSecret : true);
-            const totalItems = visibleItems.filter(i => !i.isSecret).length;
-            // Done = Bought OR (Group > 0)
-            const doneItems = visibleItems.filter(i => !i.isSecret && (i.isBought || (i.contributors && i.contributors.length > 0))).length;
+            // FILTER & STATS LOGIC
+            const visibleItems = items.filter(item => {
+                const secretCheck = mode === 'owner' ? !item.isSecret : true;
+                const categoryCheck = activeCategory === 'all' ? true : item.category === activeCategory;
+                return secretCheck && categoryCheck;
+            });
+
+            const totalItems = items.filter(i => !i.isSecret).length;
+            const doneItems = items.filter(i => !i.isSecret && (i.isBought || (i.contributors && i.contributors.length > 0))).length;
             const progress = totalItems > 0 ? (doneItems / totalItems) * 100 : 0;
 
             // SHARE FUNCTION (SAFE)
@@ -708,7 +840,7 @@
 
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative flex flex-col">
-                <div className={`${mode === 'owner' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white p-6 pb-12 rounded-b-3xl shadow-lg relative z-10 transition-colors duration-500`}>
+                <div className={`${mode === 'owner' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white p-6 pb-4 rounded-b-3xl shadow-lg relative z-10 transition-colors duration-500`}>
                     <div className="flex justify-between items-start mb-4">
                     <button onClick={onBack} className="opacity-80 hover:opacity-100 text-sm flex items-center gap-1">&larr; Zurück</button>
                     
@@ -718,7 +850,7 @@
                         {mode === 'owner' ? 'Ersteller-Modus' : `Gast: ${guestName}`}
                     </div>
                     </div>
-                    <div className="flex justify-between items-end">
+                    <div className="flex justify-between items-end mb-4">
                     <div>
                         <h1 className="text-2xl font-bold mb-1">{listData.title}</h1>
                         <p className="opacity-90 text-sm flex items-center gap-2">
@@ -768,8 +900,34 @@
                     )}
                 </div>
 
+                {/* CATEGORY FILTER SCROLLBAR (ALWAYS VISIBLE if in Wish mode) */}
+                {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && (
+                    <div className="overflow-x-auto whitespace-nowrap px-4 py-3 bg-slate-50 border-b border-slate-200 no-scrollbar sticky top-0 z-20">
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setActiveCategory('all')}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${activeCategory === 'all' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}
+                            >
+                                Alle
+                            </button>
+                            {CATEGORIES.map(cat => {
+                                const Icon = cat.icon;
+                                return (
+                                    <button 
+                                        key={cat.id}
+                                        onClick={() => setActiveCategory(cat.id)}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeCategory === cat.id ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}
+                                    >
+                                        <Icon size={12} /> {cat.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 {mode === 'guest' && (
-                    <div className="flex bg-slate-100 p-1 mx-4 -mt-6 rounded-xl relative z-20 shadow-sm mb-4">
+                    <div className="flex bg-slate-100 p-1 mx-4 mt-4 rounded-xl relative z-10 shadow-sm mb-4">
                     <button onClick={() => setActiveTab('wishes')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'wishes' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><Gift size={16} /> Wünsche</button>
                     <button onClick={() => setActiveTab('chat')} className={`flex-1 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${activeTab === 'chat' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><MessageCircle size={16} /> Lounge</button>
                     </div>
@@ -778,7 +936,7 @@
                 <div className="flex-1 overflow-y-auto px-4 pb-20 custom-scrollbar">
                     {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && (
                     <div className="space-y-4 pt-2">
-                        {visibleItems.length === 0 && <div className="text-center py-12 text-slate-400"><Gift className="w-12 h-12 mx-auto mb-2 opacity-20" /><p>Noch keine Wünsche eingetragen.</p></div>}
+                        {visibleItems.length === 0 && <div className="text-center py-12 text-slate-400"><Gift className="w-12 h-12 mx-auto mb-2 opacity-20" /><p>Keine Wünsche in dieser Kategorie.</p></div>}
                         {visibleItems.map(item => <WishListItem key={item.id} item={item} currentMode={mode} currentUserUid={user?.uid} guestName={guestName} onDelete={handleDeleteItem} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} />)}
                     </div>
                     )}
