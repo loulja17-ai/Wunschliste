@@ -44,6 +44,10 @@
         /* Animation Utilities */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Spinner Animation */
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin-slow { animation: spin 2s linear infinite; }
     </style>
 </head>
 <body>
@@ -60,7 +64,7 @@
             Check, Link as LinkIcon, 
             ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight, Copy, Hash, 
             Image as ImageIcon, Heart, Lightbulb, ThumbsUp,
-            Smartphone, Shirt, Home, BookOpen, Coffee, Music, Smile, Star
+            Smartphone, Shirt, Home, BookOpen, Coffee, Music, Smile, Star, Wand2, Loader2, X
         } from 'lucide-react';
         
         import { initializeApp } from 'firebase/app';
@@ -380,9 +384,10 @@
             const [image, setImage] = useState('');
             const [priority, setPriority] = useState('medium'); 
             const [category, setCategory] = useState('general');
+            const [fetchingImage, setFetchingImage] = useState(false);
 
             const handleAdd = () => {
-                if(!text) return;
+                if(!text && !link) return; // Prevent empty adds, though link alone could be valid if text auto-fills
                 onAdd({
                 title: text, price, link, image, priority, category,
                 isSecret: currentMode === 'guest'
@@ -390,15 +395,52 @@
                 setText(''); setPrice(''); setLink(''); setImage(''); setPriority('medium'); setCategory('general');
             }
 
+            const fetchMetadata = async (url) => {
+                if (!url) return;
+                
+                setFetchingImage(true);
+                try {
+                    const encodedUrl = encodeURIComponent(url);
+                    const response = await fetch(`https://api.microlink.io/?url=${encodedUrl}&palette=true`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        if (data.data.image && data.data.image.url) {
+                            setImage(data.data.image.url);
+                        }
+                        // Auto-fill title if empty
+                        if (!text && data.data.title) {
+                            setText(data.data.title);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Meta Fetch Error", e);
+                } finally {
+                    setFetchingImage(false);
+                }
+            };
+
+            const handleLinkBlur = (e) => {
+                const val = e.target.value;
+                if(val && val !== link) {
+                    // If link changed or just blurred
+                    fetchMetadata(val);
+                }
+            };
+
             return (
                 <div className="sticky bottom-0 bg-white/90 backdrop-blur-md p-4 border-t border-slate-100 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-30">
                 <div className="flex flex-col gap-2 max-w-md mx-auto">
+                    
+                    {/* Main Input Row */}
                     <div className="flex gap-2 items-center">
                     <input value={text} onChange={(e) => setText(e.target.value)} placeholder={currentMode === 'owner' ? "Neuer Wunsch..." : "Überraschungs-Idee..."} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner" />
                     <button onClick={handleAdd} disabled={!text} className={`p-3 rounded-xl text-white shadow-lg transform active:scale-95 transition-all ${currentMode === 'owner' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-200'}`}>
                         {currentMode === 'owner' ? <Plus size={24} /> : <Sparkles size={24} />}
                     </button>
                     </div>
+
+                    {/* Extended Options (Owner only) */}
                     {currentMode === 'owner' && (
                     <div className="flex flex-col gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
                         {/* Upper Row: Price, Category, Priority */}
@@ -424,13 +466,35 @@
                             </div>
                         </div>
                         
-                        {/* Lower Row: Link & Image */}
-                        <div className="flex gap-2">
-                            <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link (opt)" className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                        {/* Lower Row: Link with Auto-Fetch */}
+                        <div className="flex gap-2 items-center">
                             <div className="relative flex-1">
-                                <input value={image} onChange={(e) => setImage(e.target.value)} placeholder="Bild-URL (opt)" className="w-full pl-8 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
-                                <ImageIcon size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                                <input 
+                                    value={link} 
+                                    onChange={(e) => setLink(e.target.value)}
+                                    onBlur={handleLinkBlur}
+                                    placeholder="Shop-Link einfügen..." 
+                                    className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" 
+                                />
+                                {fetchingImage && (
+                                    <div className="absolute right-2 top-2.5">
+                                        <Loader2 size={14} className="animate-spin text-indigo-500" />
+                                    </div>
+                                )}
                             </div>
+                            
+                            {/* Image Preview Thumbnail (if found) */}
+                            {image && (
+                                <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shadow-sm shrink-0 group">
+                                    <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                                    <button 
+                                        onClick={() => setImage('')}
+                                        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                     )}
