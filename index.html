@@ -14,7 +14,7 @@
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <!-- 3. Import Map: Definiert, woher der Browser React & Co. lädt -->
+    <!-- 3. Import Map -->
     <script type="importmap">
     {
       "imports": {
@@ -29,31 +29,23 @@
     </script>
 
     <style>
-        /* Custom Scrollbar für Listen */
+        /* Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* Hide scrollbar for category list */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         body { background-color: #f8fafc; }
-        
-        /* Animation Utilities */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        /* Spinner Animation */
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin 2s linear infinite; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <!-- 4. Der eigentliche App Code als Babel-Script -->
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
@@ -100,7 +92,6 @@
             measurementId: "G-4NHT3SRWES"
         };
 
-        // Initialisierung
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -127,17 +118,13 @@
             return cat ? cat.label : 'Allgemein';
         };
 
-        // --- HELPER: SAFE URL UPDATE ---
         const safeUpdateURL = (param) => {
             try {
                 const url = param ? `?list=${param}` : window.location.pathname;
                 window.history.pushState({}, '', url);
-            } catch (e) {
-                console.warn("URL Update suppressed:", e);
-            }
+            } catch (e) { console.warn("URL Update suppressed:", e); }
         };
         
-        // --- HELPER: CONFETTI ---
         const triggerConfetti = () => {
             if (typeof window.confetti === 'function') {
                 window.confetti({
@@ -149,7 +136,6 @@
             }
         };
 
-        // --- HELPER: SORTING ---
         const getPriorityWeight = (p) => {
             if (p === 'high') return 3;
             if (p === 'medium') return 2;
@@ -160,10 +146,7 @@
         const sortItems = (a, b) => {
             const weightA = getPriorityWeight(a.priority);
             const weightB = getPriorityWeight(b.priority);
-            
-            if (weightA !== weightB) {
-                return weightB - weightA; 
-            }
+            if (weightA !== weightB) return weightB - weightA; 
             return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
         };
         
@@ -196,7 +179,6 @@
                 isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'
                 }`}>
                 
-                {/* Image Section */}
                 {item.image && (
                     <div className="h-32 w-full overflow-hidden relative group">
                         <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
@@ -210,26 +192,17 @@
                     <div className="flex-1">
                     <div className="flex flex-wrap gap-2 mb-1">
                         <PriorityBadge priority={item.priority} />
-                        
-                        {/* Category Badge */}
                         <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                             <CategoryIcon size={10} /> {getCategoryLabel(item.category)}
                         </span>
-
                         {item.isSecret && (
-                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded">
-                            <Sparkles size={10} /> Überraschung
-                        </span>
+                        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded"><Sparkles size={10} /> Überraschung</span>
                         )}
                         {isGroupMode && (
-                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded">
-                            <PieChart size={10} /> Sammelgeschenk
-                        </span>
+                        <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded"><PieChart size={10} /> Sammelgeschenk</span>
                         )}
                         {item.isBought && (
-                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded">
-                            <ShoppingBag size={10} /> Bereits Gekauft
-                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded"><ShoppingBag size={10} /> Bereits Gekauft</span>
                         )}
                     </div>
                     
@@ -254,7 +227,6 @@
 
                 {currentMode === 'guest' && (
                     <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                    
                     {isGroupMode ? (
                         <div className="flex items-center justify-between gap-2">
                         <div className="text-sm flex-1">
@@ -266,22 +238,11 @@
                         </div>
                         <div className="flex gap-2">
                             {isContributer && (
-                            <button 
-                                onClick={() => onToggleBought(item)}
-                                className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
-                                title={item.isBought ? "Als nicht gekauft markieren" : "Als gekauft markieren"}
-                            >
+                            <button onClick={() => onToggleBought(item)} className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`} title={item.isBought ? "Als nicht gekauft markieren" : "Als gekauft markieren"}>
                                 <ShoppingBag size={16} />
                             </button>
                             )}
-                            <button
-                            onClick={() => onToggleReservation(item, 'group')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                                isContributer 
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' 
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'
-                            }`}
-                            >
+                            <button onClick={() => onToggleReservation(item, 'group')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${isContributer ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'}`}>
                             {isContributer ? 'Verlassen' : 'Beteiligen'}
                             </button>
                         </div>
@@ -298,20 +259,10 @@
                         </div>
                         {isReservedByMe && (
                             <div className="flex gap-2">
-                            <button 
-                                onClick={() => onToggleBought(item)}
-                                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
-                                item.isBought 
-                                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                                : 'bg-white border border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-600'
-                                }`}
-                            >
+                            <button onClick={() => onToggleBought(item)} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-white border border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-600'}`}>
                                 {item.isBought ? 'Erledigt' : 'Kaufen?'}
                             </button>
-                            <button
-                                onClick={() => onToggleReservation(item, 'single')}
-                                className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                            >
+                            <button onClick={() => onToggleReservation(item, 'single')} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
                                 Freigeben
                             </button>
                             </div>
@@ -319,16 +270,10 @@
                         </div>
                     ) : (
                         <div className="flex gap-2">
-                        <button
-                            onClick={() => onToggleReservation(item, 'single')}
-                            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"
-                        >
+                        <button onClick={() => onToggleReservation(item, 'single')} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2">
                             <CheckCircle size={14} /> Reservieren
                         </button>
-                        <button
-                            onClick={() => onToggleReservation(item, 'group')}
-                            className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"
-                        >
+                        <button onClick={() => onToggleReservation(item, 'group')} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2">
                             <PieChart size={14} /> Sammeln
                         </button>
                         </div>
@@ -342,13 +287,11 @@
 
         const ChatArea = ({ messages, guestName, onSend, currentUserUid }) => {
             const [newMessage, setNewMessage] = useState('');
-
             const handleSend = () => {
                 if (!newMessage.trim()) return;
                 onSend(newMessage);
                 setNewMessage('');
             };
-
             return (
                 <div className="flex flex-col h-full pt-2">
                 <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg mb-4 text-xs text-amber-800 flex gap-2">
@@ -387,7 +330,7 @@
             const [fetchingImage, setFetchingImage] = useState(false);
 
             const handleAdd = () => {
-                if(!text && !link) return; // Prevent empty adds, though link alone could be valid if text auto-fills
+                if(!text && !link) return; 
                 onAdd({
                 title: text, price, link, image, priority, category,
                 isSecret: currentMode === 'guest'
@@ -395,9 +338,14 @@
                 setText(''); setPrice(''); setLink(''); setImage(''); setPriority('medium'); setCategory('general');
             }
 
-            const fetchMetadata = async (url) => {
+            const fetchMetadata = async (urlToFetch) => {
+                let url = urlToFetch || link;
                 if (!url) return;
                 
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                }
+
                 setFetchingImage(true);
                 try {
                     const encodedUrl = encodeURIComponent(url);
@@ -407,10 +355,6 @@
                     if (data.status === 'success') {
                         if (data.data.image && data.data.image.url) {
                             setImage(data.data.image.url);
-                        }
-                        // Auto-fill title if empty
-                        if (!text && data.data.title) {
-                            setText(data.data.title);
                         }
                     }
                 } catch (e) {
@@ -423,7 +367,6 @@
             const handleLinkBlur = (e) => {
                 const val = e.target.value;
                 if(val && val !== link) {
-                    // If link changed or just blurred
                     fetchMetadata(val);
                 }
             };
@@ -431,68 +374,41 @@
             return (
                 <div className="sticky bottom-0 bg-white/90 backdrop-blur-md p-4 border-t border-slate-100 shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] z-30">
                 <div className="flex flex-col gap-2 max-w-md mx-auto">
-                    
-                    {/* Main Input Row */}
                     <div className="flex gap-2 items-center">
                     <input value={text} onChange={(e) => setText(e.target.value)} placeholder={currentMode === 'owner' ? "Neuer Wunsch..." : "Überraschungs-Idee..."} className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner" />
                     <button onClick={handleAdd} disabled={!text} className={`p-3 rounded-xl text-white shadow-lg transform active:scale-95 transition-all ${currentMode === 'owner' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-200'}`}>
                         {currentMode === 'owner' ? <Plus size={24} /> : <Sparkles size={24} />}
                     </button>
                     </div>
-
-                    {/* Extended Options (Owner only) */}
                     {currentMode === 'owner' && (
                     <div className="flex flex-col gap-2 animate-in slide-in-from-bottom-2 fade-in duration-300">
-                        {/* Upper Row: Price, Category, Priority */}
                         <div className="flex gap-2 items-center">
                             <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Preis" className="w-20 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
-                            
-                            {/* Category Selector */}
-                            <select 
-                                value={category} 
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm flex-1"
-                            >
-                                {CATEGORIES.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.label}</option>
-                                ))}
+                            <select value={category} onChange={(e) => setCategory(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm flex-1">
+                                {CATEGORIES.map(cat => <option key={cat.id} value={cat.id}>{cat.label}</option>)}
                             </select>
-
-                            {/* Priority Selector */}
                             <div className="flex bg-slate-50 rounded-lg p-1 border border-slate-200 shrink-0">
                                 <button onClick={() => setPriority('high')} className={`p-1.5 rounded-md transition-all ${priority === 'high' ? 'bg-white shadow text-red-500' : 'text-slate-400 hover:text-slate-600'}`} title="Herzenswunsch"><Heart size={16} fill={priority === 'high' ? "currentColor" : "none"} /></button>
                                 <button onClick={() => setPriority('medium')} className={`p-1.5 rounded-md transition-all ${priority === 'medium' ? 'bg-white shadow text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`} title="Gerne"><ThumbsUp size={16} /></button>
                                 <button onClick={() => setPriority('low')} className={`p-1.5 rounded-md transition-all ${priority === 'low' ? 'bg-white shadow text-yellow-500' : 'text-slate-400 hover:text-slate-600'}`} title="Idee"><Lightbulb size={16} /></button>
                             </div>
                         </div>
-                        
-                        {/* Lower Row: Link with Auto-Fetch */}
                         <div className="flex gap-2 items-center">
                             <div className="relative flex-1">
-                                <input 
-                                    value={link} 
-                                    onChange={(e) => setLink(e.target.value)}
-                                    onBlur={handleLinkBlur}
-                                    placeholder="Shop-Link einfügen..." 
-                                    className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" 
-                                />
-                                {fetchingImage && (
-                                    <div className="absolute right-2 top-2.5">
-                                        <Loader2 size={14} className="animate-spin text-indigo-500" />
-                                    </div>
-                                )}
+                                <input value={link} onChange={(e) => setLink(e.target.value)} onBlur={handleLinkBlur} placeholder="Shop-Link einfügen..." className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                                <button 
+                                    onClick={() => fetchMetadata(link)}
+                                    disabled={fetchingImage || !link}
+                                    className="absolute right-1 top-1 p-1.5 bg-indigo-50 text-indigo-400 rounded-md hover:bg-indigo-100 hover:text-indigo-600 disabled:opacity-50 transition-colors"
+                                    title="Bild neu suchen"
+                                >
+                                    {fetchingImage ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                                </button>
                             </div>
-                            
-                            {/* Image Preview Thumbnail (if found) */}
                             {image && (
                                 <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 shadow-sm shrink-0 group">
                                     <img src={image} alt="Preview" className="w-full h-full object-cover" />
-                                    <button 
-                                        onClick={() => setImage('')}
-                                        className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
-                                    >
-                                        <X size={14} />
-                                    </button>
+                                    <button onClick={() => setImage('')} className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"><X size={14} /></button>
                                 </div>
                             )}
                         </div>
@@ -743,39 +659,28 @@
             const [items, setItems] = useState([]);
             const [messages, setMessages] = useState([]);
             const [activeTab, setActiveTab] = useState('wishes');
-            const [activeCategory, setActiveCategory] = useState('all'); // NEU: Category State
+            const [activeCategory, setActiveCategory] = useState('all');
 
-            // --- REAL FIRESTORE LISTENERS ---
             useEffect(() => {
                 if (!listData?.id) return;
 
-                // 1. ITEMS LISTENER
                 const itemsRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`);
                 const unsubItems = onSnapshot(itemsRef, (snapshot) => {
                 const loadedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
-                // NEU: Sortierung nach Prio (Custom) dann Datum
                 loadedItems.sort(sortItems);
-                
                 setItems(loadedItems);
                 }, (error) => console.error("Items Error:", error));
 
-                // 2. CHAT LISTENER
                 const chatRef = collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`);
                 const unsubChat = onSnapshot(chatRef, (snapshot) => {
                 const loadedMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                loadedMsgs.sort(sortByDateAsc); // Chat needs ASC order
+                loadedMsgs.sort(sortByDateAsc); 
                 setMessages(loadedMsgs);
                 }, (error) => console.error("Chat Error:", error));
 
-                return () => {
-                unsubItems();
-                unsubChat();
-                };
+                return () => { unsubItems(); unsubChat(); };
             }, [listData]);
 
-            // --- ACTIONS ---
-            
             const handleAddItem = async (newItem) => {
                 if (!user) return;
                 try {
@@ -803,7 +708,6 @@
 
             const handleToggleReservation = async (item, type = 'single') => {
                 if (!user) return;
-                // Check if guest name exists
                 if (!guestName || guestName.trim() === '') {
                 alert("Bitte gib zuerst deinen Namen an (Login oder Gast-Zugang).");
                 return;
@@ -815,21 +719,14 @@
                 try {
                 if (type === 'group' || (item.contributors && item.contributors.length > 0)) {
                     const hasJoined = item.contributors?.some(c => c.uid === user.uid);
-                    
                     let newContributors = item.contributors || [];
                     if (hasJoined) {
                     newContributors = newContributors.filter(c => c.uid !== user.uid);
                     } else {
                     newContributors.push(userObj);
-                    // CONFETTI ON JOIN
                     triggerConfetti();
                     }
-                    
-                    await updateDoc(itemRef, { 
-                    contributors: newContributors,
-                    reservedBy: null 
-                    });
-
+                    await updateDoc(itemRef, { contributors: newContributors, reservedBy: null });
                 } else {
                     const isReservedByMe = item.reservedBy?.uid === user.uid;
                     if (item.reservedBy && !isReservedByMe) {
@@ -837,7 +734,6 @@
                     return;
                     }
                     const newReservedBy = isReservedByMe ? null : userObj;
-                    // CONFETTI ON RESERVE
                     if (!isReservedByMe) triggerConfetti();
                     await updateDoc(itemRef, { reservedBy: newReservedBy });
                 }
@@ -851,7 +747,6 @@
                 if (!user) return;
                 try {
                 const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, item.id);
-                // CONFETTI ON BUY
                 if (!item.isBought) triggerConfetti();
                 await updateDoc(itemRef, { isBought: !item.isBought });
                 } catch(e) {
@@ -865,7 +760,7 @@
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_chat`), {
                     text,
                     sender: guestName,
-                    uid: user.uid, // Save UID for better identification
+                    uid: user.uid, 
                     createdAt: serverTimestamp()
                 });
                 } catch (e) {
@@ -880,7 +775,6 @@
             };
             const daysLeft = getDaysLeft();
             
-            // FILTER & STATS LOGIC
             const visibleItems = items.filter(item => {
                 const secretCheck = mode === 'owner' ? !item.isSecret : true;
                 const categoryCheck = activeCategory === 'all' ? true : item.category === activeCategory;
@@ -891,7 +785,6 @@
             const doneItems = items.filter(i => !i.isSecret && (i.isBought || (i.contributors && i.contributors.length > 0))).length;
             const progress = totalItems > 0 ? (doneItems / totalItems) * 100 : 0;
 
-            // SHARE FUNCTION (SAFE)
             const handleShare = () => {
                 try {
                 const url = `${window.location.origin}${window.location.pathname}?list=${listData.id}`;
@@ -907,8 +800,6 @@
                 <div className={`${mode === 'owner' ? 'bg-indigo-600' : 'bg-emerald-600'} text-white p-6 pb-4 rounded-b-3xl shadow-lg relative z-10 transition-colors duration-500`}>
                     <div className="flex justify-between items-start mb-4">
                     <button onClick={onBack} className="opacity-80 hover:opacity-100 text-sm flex items-center gap-1">&larr; Zurück</button>
-                    
-                    {/* USER INFO BADGE (STATIC - NO SWITCH) */}
                     <div className="text-xs bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1 cursor-default select-none">
                         <User size={10} />
                         {mode === 'owner' ? 'Ersteller-Modus' : `Gast: ${guestName}`}
@@ -929,28 +820,18 @@
                     )}
                     </div>
                     
-                    {/* CODE DISPLAY & SHARE (OWNER ONLY) */}
                     {mode === 'owner' && (
                     <div className="flex flex-col gap-2 mt-4 animate-in fade-in slide-in-from-bottom-2">
-                        {/* Code Display */}
                         <div className="flex items-center justify-between bg-white/10 p-2 rounded-lg border border-indigo-400/30">
                             <div className="flex flex-col">
                                 <span className="text-[10px] text-indigo-200 uppercase tracking-wider font-bold">Gruppen-Code</span>
                                 <span className="text-lg font-mono font-bold tracking-widest text-white select-all">{listData.id}</span>
                             </div>
-                             <button 
-                                onClick={() => {navigator.clipboard.writeText(listData.id); alert("Code kopiert!");}}
-                                className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-lg transition-colors"
-                                title="Code kopieren"
-                            >
+                             <button onClick={() => {navigator.clipboard.writeText(listData.id); alert("Code kopiert!");}} className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-lg transition-colors" title="Code kopieren">
                                 <Copy size={16} />
                             </button>
                         </div>
-                        {/* Full Link Share */}
-                        <button 
-                            onClick={handleShare}
-                            className="w-full bg-white text-indigo-700 py-2 rounded-lg shadow-sm hover:bg-indigo-50 font-bold text-sm flex items-center justify-center gap-2 transition-colors"
-                        >
+                        <button onClick={handleShare} className="w-full bg-white text-indigo-700 py-2 rounded-lg shadow-sm hover:bg-indigo-50 font-bold text-sm flex items-center justify-center gap-2 transition-colors">
                             <LinkIcon size={14} /> Link teilen
                         </button>
                     </div>
@@ -964,24 +845,14 @@
                     )}
                 </div>
 
-                {/* CATEGORY FILTER SCROLLBAR (ALWAYS VISIBLE if in Wish mode) */}
                 {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && (
                     <div className="overflow-x-auto whitespace-nowrap px-4 py-3 bg-slate-50 border-b border-slate-200 no-scrollbar sticky top-0 z-20">
                         <div className="flex gap-2">
-                            <button 
-                                onClick={() => setActiveCategory('all')}
-                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${activeCategory === 'all' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}
-                            >
-                                Alle
-                            </button>
+                            <button onClick={() => setActiveCategory('all')} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${activeCategory === 'all' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}>Alle</button>
                             {CATEGORIES.map(cat => {
                                 const Icon = cat.icon;
                                 return (
-                                    <button 
-                                        key={cat.id}
-                                        onClick={() => setActiveCategory(cat.id)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeCategory === cat.id ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}
-                                    >
+                                    <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${activeCategory === cat.id ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-200'}`}>
                                         <Icon size={12} /> {cat.label}
                                     </button>
                                 );
@@ -1012,8 +883,7 @@
             );
         }
 
-        // --- MAIN APP COMPONENT ---
-        function App() {
+        const App = () => {
             const [user, setUser] = useState(null); 
             const [authInitialized, setAuthInitialized] = useState(false);
             const [activeListData, setActiveListData] = useState(null);
