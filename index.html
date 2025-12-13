@@ -168,7 +168,7 @@
             return isNaN(val) ? 0 : val;
         };
 
-        // --- COMPONENTS ---
+        // --- SUB-COMPONENTS (DEFINED FIRST) ---
 
         const PriorityBadge = ({ priority }) => {
             if (priority === 'high') return <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><Heart size={10} fill="currentColor" /> Herzenswunsch</span>;
@@ -176,15 +176,116 @@
             return null;
         };
 
+        const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onEdit, onSelect, onToggleReservation, onToggleBought, onOpenContribution, currencySymbol }) => {
+            const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
+            const contributorCount = item.contributors?.length || 0;
+            const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
+            const isReservedByMe = item.reservedBy?.uid === currentUserUid;
+            const isReserved = !!item.reservedBy;
+            const isFullyReserved = isReserved && !isGroupMode;
+            const CategoryIcon = getCategoryIcon(item.category);
+            const isMySecretGift = currentMode === 'guest' && item.isSecret && (item.addedByUid === currentUserUid);
+            const canManage = currentMode === 'owner' || isMySecretGift;
+            const targetPrice = parsePrice(item.price);
+            const totalCollected = (item.contributors || []).reduce((acc, c) => acc + (c.amount || 0), 0);
+            const progress = targetPrice > 0 ? Math.min(100, (totalCollected / targetPrice) * 100) : 0;
+            const displayPrice = item.price ? (parsePrice(item.price) > 0 ? `${item.price} ${currencySymbol}` : item.price) : '';
+
+            const [touchStart, setTouchStart] = useState(null);
+            const [touchEnd, setTouchEnd] = useState(null);
+            const [isSwiped, setIsSwiped] = useState(false);
+            const minSwipeDistance = 50;
+
+            const onTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); }
+            const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+            const onTouchEnd = () => {
+                if (!touchStart || !touchEnd) return;
+                const distance = touchStart - touchEnd;
+                const isLeftSwipe = distance > minSwipeDistance;
+                const isRightSwipe = distance < -minSwipeDistance;
+                if (isLeftSwipe && canManage) setIsSwiped(true);
+                if (isRightSwipe) setIsSwiped(false);
+            }
+            const handleDeleteSwipe = (e) => { e.stopPropagation(); if(window.confirm("Wirklich löschen?")) onDelete(item.id); else setIsSwiped(false); }
+
+            const handleGuestAction = (e, action) => {
+                e.stopPropagation();
+                action();
+            };
+
+            return (
+                <div className="relative overflow-hidden rounded-xl mb-3 group" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+                    <div className={`absolute inset-0 bg-red-500 flex items-center justify-end px-8 transition-all duration-300 ${isSwiped ? 'opacity-100' : 'opacity-0'}`} onClick={handleDeleteSwipe}>
+                        <span className="text-white font-bold flex items-center justify-center"><Trash2 size={24} /></span>
+                    </div>
+                    <div onClick={() => onSelect(item)} className={`bg-white border rounded-xl overflow-hidden transition-transform duration-300 shadow-sm relative z-10 cursor-pointer active:scale-[0.98] ${isSwiped ? '-translate-x-24' : 'translate-x-0'} ${item.isSecret ? 'border-amber-200 bg-amber-50/50' : item.isBought ? 'border-emerald-200 bg-emerald-50/40' : isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'}`}>
+                        {item.image && (
+                            <div className="h-32 w-full overflow-hidden relative group">
+                                <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                                {displayPrice && <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">{displayPrice}</span>}
+                            </div>
+                        )}
+                        <div className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                    <div className="flex flex-wrap gap-2 mb-1">
+                                        <PriorityBadge priority={item.priority} />
+                                        <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><CategoryIcon size={10} /> {getCategoryLabel(item.category)}</span>
+                                        {item.isSecret && <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded"><Sparkles size={10} /> Überraschung</span>}
+                                        {isGroupMode && <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded"><PieChart size={10} /> Sammelgeschenk</span>}
+                                        {item.isBought && <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded"><ShoppingBag size={10} /> Bereits Gekauft</span>}
+                                    </div>
+                                    <h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved && currentMode === 'guest' && !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}>{item.title}</h3>
+                                    <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">{!item.image && displayPrice && <span>{displayPrice}</span>}</div>
+                                </div>
+                                {canManage && (
+                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => onEdit(item)} className="text-slate-300 hover:text-indigo-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Bearbeiten"><Pencil size={16} /></button>
+                                        <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Löschen"><Trash2 size={16} /></button>
+                                    </div>
+                                )}
+                            </div>
+                            {currentMode === 'guest' && (
+                                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                                {isGroupMode ? (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="text-sm flex-1 text-blue-600 flex gap-1 items-center"><Users size={12} /> <span>{contributorCount}</span></div>
+                                        <div className="flex gap-2">
+                                            {isContributer && <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}><ShoppingBag size={16} /></button>}
+                                            <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${isContributer ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'}`}>{isContributer ? 'Verlassen' : 'Beteiligen'}</button>
+                                        </div>
+                                    </div>
+                                ) : isReserved ? (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 text-sm text-slate-500"><span className={`w-2 h-2 rounded-full ${item.isBought ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>{item.isBought ? 'Gekauft' : 'Reserviert'} von {isReservedByMe ? 'Dir' : item.reservedBy.name}</div>
+                                        {isReservedByMe && (
+                                            <div className="flex gap-2">
+                                                <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}><ShoppingBag size={16} /></button>
+                                                <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200">Freigeben</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"><CheckCircle size={14} /> Reservieren</button>
+                                        <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"><PieChart size={14} /> Sammeln</button>
+                                    </div>
+                                )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const ListSettingsModal = ({ listData, onClose, onSave }) => {
             const [title, setTitle] = useState(listData.title);
             const [date, setDate] = useState(listData.eventDate || '');
             const [currency, setCurrency] = useState(listData.currency || '€');
 
-            const handleSave = () => {
-                onSave({ title, eventDate: date, currency });
-                onClose();
-            };
+            const handleSave = () => { onSave({ title, eventDate: date, currency }); onClose(); };
 
             return (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -212,14 +313,7 @@
         const ContributionModal = ({ item, currentUserUid, onClose, onConfirm, currencySymbol }) => {
             const myContribution = item.contributors?.find(c => c.uid === currentUserUid);
             const [amount, setAmount] = useState(myContribution?.amount || '');
-            
-            const handleSubmit = () => {
-                const val = parseFloat(amount);
-                if (isNaN(val) || val < 0) return alert("Bitte einen gültigen Betrag eingeben");
-                onConfirm(item, val);
-                onClose();
-            };
-
+            const handleSubmit = () => { const val = parseFloat(amount); if (isNaN(val) || val < 0) return alert("Bitte einen gültigen Betrag eingeben"); onConfirm(item, val); onClose(); };
             const targetPrice = parsePrice(item.price);
             const alreadyCollected = (item.contributors || []).reduce((acc, c) => acc + (c.amount || 0), 0) - (myContribution?.amount || 0);
             const missing = Math.max(0, targetPrice - alreadyCollected);
@@ -231,10 +325,7 @@
                         <h2 className="text-lg font-bold mb-1">Sammelgeschenk</h2>
                         <p className="text-sm text-slate-500 mb-4">{item.title}</p>
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">Dein Beitrag ({currencySymbol})</label>
-                                <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg font-bold text-center" placeholder="0.00" autoFocus />
-                            </div>
+                            <div><label className="block text-xs font-bold uppercase text-slate-400 mb-1">Dein Beitrag ({currencySymbol})</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg font-bold text-center" placeholder="0.00" autoFocus /></div>
                             {targetPrice > 0 && <div className="text-xs text-center text-slate-500 bg-slate-50 p-2 rounded-lg">Offen: <strong>{missing.toFixed(2)} {currencySymbol}</strong></div>}
                             <button onClick={handleSubmit} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">{myContribution ? 'Aktualisieren' : 'Beteiligen'}</button>
                             {myContribution && <button onClick={() => { onConfirm(item, 0); onClose(); }} className="w-full text-red-500 text-sm hover:underline">Verlassen (Beitrag löschen)</button>}
@@ -322,111 +413,6 @@
                                             <button onClick={() => onOpenContribution(item)} className="bg-white border border-blue-200 text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors flex flex-col items-center justify-center gap-1"><PieChart size={20} /><span>Sammeln</span></button>
                                         </div>
                                     )}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onEdit, onSelect, onToggleReservation, onToggleBought, onOpenContribution, currencySymbol }) => {
-            const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
-            const contributorCount = item.contributors?.length || 0;
-            const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
-            const isReservedByMe = item.reservedBy?.uid === currentUserUid;
-            const isReserved = !!item.reservedBy;
-            const isFullyReserved = isReserved && !isGroupMode;
-            const CategoryIcon = getCategoryIcon(item.category);
-            const isMySecretGift = currentMode === 'guest' && item.isSecret && (item.addedByUid === currentUserUid);
-            const canManage = currentMode === 'owner' || isMySecretGift;
-            const targetPrice = parsePrice(item.price);
-            const totalCollected = (item.contributors || []).reduce((acc, c) => acc + (c.amount || 0), 0);
-            const progress = targetPrice > 0 ? Math.min(100, (totalCollected / targetPrice) * 100) : 0;
-
-            const [touchStart, setTouchStart] = useState(null);
-            const [touchEnd, setTouchEnd] = useState(null);
-            const [isSwiped, setIsSwiped] = useState(false);
-            const minSwipeDistance = 50;
-
-            const onTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); }
-            const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-            const onTouchEnd = () => {
-                if (!touchStart || !touchEnd) return;
-                const distance = touchStart - touchEnd;
-                const isLeftSwipe = distance > minSwipeDistance;
-                const isRightSwipe = distance < -minSwipeDistance;
-                if (isLeftSwipe && canManage) setIsSwiped(true);
-                if (isRightSwipe) setIsSwiped(false);
-            }
-            const handleDeleteSwipe = (e) => { e.stopPropagation(); if(window.confirm("Wirklich löschen?")) onDelete(item.id); else setIsSwiped(false); }
-
-            const displayPrice = item.price ? (parsePrice(item.price) > 0 ? `${item.price} ${currencySymbol}` : item.price) : '';
-
-            const handleGuestAction = (e, action) => {
-                e.stopPropagation();
-                action();
-            };
-
-            return (
-                <div className="relative overflow-hidden rounded-xl mb-3 group" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-                    <div className={`absolute inset-0 bg-red-500 flex items-center justify-end px-8 transition-all duration-300 ${isSwiped ? 'opacity-100' : 'opacity-0'}`} onClick={handleDeleteSwipe}>
-                        <span className="text-white font-bold flex items-center justify-center"><Trash2 size={24} /></span>
-                    </div>
-                    <div onClick={() => onSelect(item)} className={`bg-white border rounded-xl overflow-hidden transition-transform duration-300 shadow-sm relative z-10 cursor-pointer active:scale-[0.98] ${isSwiped ? '-translate-x-24' : 'translate-x-0'} ${item.isSecret ? 'border-amber-200 bg-amber-50/50' : item.isBought ? 'border-emerald-200 bg-emerald-50/40' : isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'}`}>
-                        {item.image && (
-                            <div className="h-32 w-full overflow-hidden relative group">
-                                <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
-                                {displayPrice && <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">{displayPrice}</span>}
-                            </div>
-                        )}
-                        <div className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex-1">
-                                    <div className="flex flex-wrap gap-2 mb-1">
-                                        <PriorityBadge priority={item.priority} />
-                                        <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><CategoryIcon size={10} /> {getCategoryLabel(item.category)}</span>
-                                        {item.isSecret && <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded"><Sparkles size={10} /> Überraschung</span>}
-                                        {isGroupMode && <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded"><PieChart size={10} /> Sammelgeschenk</span>}
-                                        {item.isBought && <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded"><ShoppingBag size={10} /> Bereits Gekauft</span>}
-                                    </div>
-                                    <h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved && currentMode === 'guest' && !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}>{item.title}</h3>
-                                    <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">{!item.image && displayPrice && <span>{displayPrice}</span>}</div>
-                                </div>
-                                {canManage && (
-                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => onEdit(item)} className="text-slate-300 hover:text-indigo-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Bearbeiten"><Pencil size={16} /></button>
-                                        <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Löschen"><Trash2 size={16} /></button>
-                                    </div>
-                                )}
-                            </div>
-                            {currentMode === 'guest' && (
-                                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                                {isGroupMode ? (
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="text-sm flex-1 text-blue-600 flex gap-1 items-center"><Users size={12} /> <span>{contributorCount}</span></div>
-                                        <div className="flex gap-2">
-                                            {isContributer && <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}><ShoppingBag size={16} /></button>}
-                                            <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${isContributer ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'}`}>{isContributer ? 'Verlassen' : 'Beteiligen'}</button>
-                                        </div>
-                                    </div>
-                                ) : isReserved ? (
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2 text-sm text-slate-500"><span className={`w-2 h-2 rounded-full ${item.isBought ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>{item.isBought ? 'Gekauft' : 'Reserviert'} von {isReservedByMe ? 'Dir' : item.reservedBy.name}</div>
-                                        {isReservedByMe && (
-                                            <div className="flex gap-2">
-                                                <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}><ShoppingBag size={16} /></button>
-                                                <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200">Freigeben</button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"><CheckCircle size={14} /> Reservieren</button>
-                                        <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"><PieChart size={14} /> Sammeln</button>
-                                    </div>
-                                )}
                                 </div>
                             )}
                         </div>
@@ -648,14 +634,15 @@
             );
         }
 
+        // MAIN COMPONENT DEFINITION BEFORE USE
         function WishListDashboard({ listData, mode, guestName, onBack, user }) {
             const [items, setItems] = useState([]);
             const [messages, setMessages] = useState([]);
             const [activeTab, setActiveTab] = useState('wishes');
             const [activeCategory, setActiveCategory] = useState('all');
             const [editingItem, setEditingItem] = useState(null);
-            const [selectedItem, setSelectedItem] = useState(null); 
-            const [contributingItem, setContributingItem] = useState(null);
+            const [selectedItemId, setSelectedItemId] = useState(null); 
+            const [contributingItemId, setContributingItemId] = useState(null); 
             const [showSettings, setShowSettings] = useState(false);
 
             const currencySymbol = listData.currency || '€';
@@ -669,9 +656,9 @@
                 return () => { unsubItems(); unsubChat(); };
             }, [listData]);
 
-            // FIX: Find the LIVE item from the items array to pass to the modal.
-            // This ensures the modal updates immediately when items change (e.g. after reservation).
-            const liveSelectedItem = selectedItem ? items.find(i => i.id === selectedItem.id) : null;
+            // LIVE ITEM LOOKUP - This solves the state sync issue
+            const selectedItem = selectedItemId ? items.find(i => i.id === selectedItemId) : null;
+            const contributingItem = contributingItemId ? items.find(i => i.id === contributingItemId) : null;
 
             const handleAddItem = async (newItem) => { if (!user) return; try { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`), { ...newItem, createdAt: serverTimestamp(), contributors: [], reservedBy: null, addedBy: mode === 'guest' ? guestName : 'Owner', addedByUid: user.uid }); } catch (e) { console.error("Add Item Error:", e); alert("Fehler beim Hinzufügen."); } };
             const handleUpdateItem = async (itemId, updatedFields) => { if (!user) return; try { const itemRef = doc(db, 'artifacts', appId, 'public', 'data', `list_${listData.id}_items`, itemId); await updateDoc(itemRef, updatedFields); } catch (e) { console.error("Update Item Error:", e); alert("Fehler beim Bearbeiten."); } };
@@ -734,22 +721,22 @@
                     {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && (
                     <div className="space-y-4 pt-2">
                         {visibleItems.length === 0 && <div className="text-center py-12 text-slate-400"><Gift className="w-12 h-12 mx-auto mb-2 opacity-20" /><p>Keine Wünsche in dieser Kategorie.</p></div>}
-                        {visibleItems.map(item => (<WishListItem key={item.id} item={item} currentMode={mode} currentUserUid={user?.uid} guestName={guestName} onDelete={handleDeleteItem} onEdit={(item) => setEditingItem(item)} onSelect={(item) => setSelectedItem(item)} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} onOpenContribution={(item) => setContributingItem(item)} currencySymbol={currencySymbol} />))}
+                        {visibleItems.map(item => (<WishListItem key={item.id} item={item} currentMode={mode} currentUserUid={user?.uid} guestName={guestName} onDelete={handleDeleteItem} onEdit={(item) => setEditingItem(item)} onSelect={(item) => setSelectedItemId(item.id)} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} onOpenContribution={(item) => setContributingItemId(item.id)} currencySymbol={currencySymbol} />))}
                     </div>
                     )}
                     {mode === 'guest' && activeTab === 'chat' && <ChatArea messages={messages} guestName={guestName} onSend={handleSendMessage} currentUserUid={user?.uid} />}
                 </div>
                 {(mode === 'owner' || (mode === 'guest' && activeTab === 'wishes')) && <AddItemInput currentMode={mode} onAdd={handleAddItem} currencySymbol={currencySymbol} />}
                 {editingItem && (<EditItemModal item={editingItem} onClose={() => setEditingItem(null)} onSave={handleUpdateItem} currencySymbol={currencySymbol} />)}
-                {/* FIX: Use liveSelectedItem to ensure the modal receives real-time updates */}
-                {liveSelectedItem && (<WishDetailModal item={liveSelectedItem} currentMode={mode} currentUserUid={user?.uid} guestName={guestName} onClose={() => setSelectedItem(null)} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} onOpenContribution={(item) => { setSelectedItem(null); setContributingItem(item); }} currencySymbol={currencySymbol} />)}
-                {contributingItem && (<ContributionModal item={contributingItem} currentUserUid={user?.uid} onClose={() => setContributingItem(null)} onConfirm={(item, amount) => handleToggleReservation(item, 'group', amount)} currencySymbol={currencySymbol} />)}
+                {/* Use LIVE data for modal to ensure instant updates */}
+                {liveSelectedItem && (<WishDetailModal item={liveSelectedItem} currentMode={mode} currentUserUid={user?.uid} guestName={guestName} onClose={() => setSelectedItemId(null)} onToggleReservation={handleToggleReservation} onToggleBought={handleToggleBought} onOpenContribution={(item) => { setSelectedItemId(null); setContributingItemId(item.id); }} currencySymbol={currencySymbol} />)}
+                {contributingItem && (<ContributionModal item={contributingItem} currentUserUid={user?.uid} onClose={() => setContributingItemId(null)} onConfirm={(item, amount) => handleToggleReservation(item, 'group', amount)} currencySymbol={currencySymbol} />)}
                 {showSettings && <ListSettingsModal listData={listData} onClose={() => setShowSettings(false)} onSave={handleUpdateListSettings} />}
                 </div>
             );
         }
 
-        // --- MAIN APP COMPONENT ---
+        // --- MAIN APP ENTRY ---
         function App() {
             const [user, setUser] = useState(null); 
             const [authInitialized, setAuthInitialized] = useState(false);
@@ -779,7 +766,6 @@
                 }
             }, [authInitialized]);
 
-            // Sync active list data in real-time (to catch settings changes like currency)
             useEffect(() => {
                 if (!activeListData?.id) return;
                 const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'lists', activeListData.id), (doc) => {
@@ -809,7 +795,7 @@
                 if (!user) return;
                 try {
                     const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'lists'), { 
-                        title, eventDate: date, ownerId: user.uid, createdAt: serverTimestamp(), guestUids: [], currency: '€' // Default Currency
+                        title, eventDate: date, ownerId: user.uid, createdAt: serverTimestamp(), guestUids: [], currency: '€'
                     });
                     const newList = { id: docRef.id, title, eventDate: date, ownerId: user.uid, currency: '€' };
                     setActiveListData(newList); safeUpdateURL(docRef.id);
