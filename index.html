@@ -240,7 +240,7 @@
                 try {
                     await updateProfile(user, { displayName: newName });
                     alert("Name erfolgreich aktualisiert!");
-                    window.location.reload(); // Simple reload to reflect changes globally
+                    window.location.reload(); 
                 } catch(e) {
                     console.error(e);
                     alert("Fehler beim Aktualisieren des Namens.");
