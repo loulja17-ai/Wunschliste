@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WunschWelle - Wunschzettel App</title>
+    <title>Wishlet - Deine Wunschliste</title>
     
     <!-- 1. Tailwind CSS für das Design -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -56,7 +56,7 @@
             Check, Link as LinkIcon, 
             ChevronRight, Calendar, List, ShoppingBag, Search, ArrowRight, Copy, Hash, 
             Image as ImageIcon, Heart, Lightbulb, ThumbsUp,
-            Smartphone, Shirt, Home, BookOpen, Coffee, Music, Smile, Star, Wand2, Loader2, X, RefreshCw, Pencil, Save, ExternalLink, Settings, AlertCircle
+            Smartphone, Shirt, Home, BookOpen, Coffee, Music, Smile, Star, Wand2, Loader2, X, RefreshCw, Pencil, Save, ExternalLink, Settings, AlertCircle, Info, ShieldCheck, Cloud
         } from 'lucide-react';
         
         import { initializeApp } from 'firebase/app';
@@ -67,7 +67,10 @@
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
             signOut,
-            sendEmailVerification
+            sendEmailVerification,
+            sendPasswordResetEmail,
+            updateProfile,
+            deleteUser
         } from 'firebase/auth';
         import { 
             getFirestore, 
@@ -168,7 +171,7 @@
             return isNaN(val) ? 0 : val;
         };
 
-        // --- SUB-COMPONENTS (DEFINED FIRST) ---
+        // --- COMPONENTS ---
 
         const PriorityBadge = ({ priority }) => {
             if (priority === 'high') return <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><Heart size={10} fill="currentColor" /> Herzenswunsch</span>;
@@ -176,103 +179,178 @@
             return null;
         };
 
-        const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onEdit, onSelect, onToggleReservation, onToggleBought, onOpenContribution, currencySymbol }) => {
-            const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
-            const contributorCount = item.contributors?.length || 0;
-            const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
-            const isReservedByMe = item.reservedBy?.uid === currentUserUid;
-            const isReserved = !!item.reservedBy;
-            const isFullyReserved = isReserved && !isGroupMode;
-            const CategoryIcon = getCategoryIcon(item.category);
-            const isMySecretGift = currentMode === 'guest' && item.isSecret && (item.addedByUid === currentUserUid);
-            const canManage = currentMode === 'owner' || isMySecretGift;
-            const targetPrice = parsePrice(item.price);
-            const totalCollected = (item.contributors || []).reduce((acc, c) => acc + (c.amount || 0), 0);
-            const progress = targetPrice > 0 ? Math.min(100, (totalCollected / targetPrice) * 100) : 0;
-            const displayPrice = item.price ? (parsePrice(item.price) > 0 ? `${item.price} ${currencySymbol}` : item.price) : '';
+        const LegalModal = ({ type, onClose }) => {
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                     <div className="bg-white rounded-2xl w-full max-w-lg p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                        <h2 className="text-2xl font-bold mb-4">{type === 'imprint' ? 'Impressum' : 'Datenschutzerklärung'}</h2>
+                        <div className="prose text-sm text-slate-600 space-y-4">
+                            {type === 'imprint' ? (
+                                <div>
+                                    <p className="font-bold">Angaben gemäß § 5 TMG (Telemediengesetz)</p>
+                                    <p>Patrick Tiziano Dressler<br />Waldmannsbreite 38a<br />34497 Korbach</p>
+                                    <p className="font-bold mt-4">Kontakt</p>
+                                    <p>E-Mail: dresslerpatrickbusiness@web.de</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p><strong>1. Allgemeine Hinweise</strong></p>
+                                    <p>Wir nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Diese Datenschutzerklärung informiert Sie darüber, welche Daten wir von Ihnen erheben, wie diese verwendet werden und welche Rechte Sie im Hinblick auf den Schutz Ihrer Daten haben.</p>
+                                    <p><strong>2. Verantwortlicher</strong></p>
+                                    <p>Verantwortlich für die Datenverarbeitung im Rahmen der App ist:<br/>Patrick Tiziano Dressler<br/>Waldmannsbreite 38a<br/>34497 Korbach<br/>E-Mail: dresslerpatrickbusiness@web.de</p>
+                                    <p><strong>3. Welche Daten werden erfasst?</strong></p>
+                                    <p>In der App werden folgende Daten erfasst:</p>
+                                    <ul className="list-disc ml-5">
+                                        <li>E-Mail-Adresse und Passwort: Zur Authentifizierung und Speicherung Ihrer Benutzerinformationen in Firebase.</li>
+                                        <li>Wunschlisten und Gruppenchats: Daten, die Sie in der App zur Verwaltung Ihrer Wünsche und Kommunikation mit anderen Nutzern eingeben.</li>
+                                        <li>Nutzungsdaten: Zur Verbesserung der App und für die Analyse der Nutzung, wie z.B. Interaktionen und die Nutzung von Features.</li>
+                                    </ul>
+                                    <p><strong>4. Zweck der Datenverarbeitung</strong></p>
+                                    <p>Wir verarbeiten Ihre Daten zu folgenden Zwecken:</p>
+                                    <ul className="list-disc ml-5">
+                                        <li>Verwaltung und Verbesserung der App: Speicherung und Bearbeitung der Wunschlisten und Gruppenchats.</li>
+                                        <li>Analyse und Kommunikation: Nutzung von Google Firebase und Google Analytics, um die Nutzung der App zu analysieren und die Benutzererfahrung zu verbessern.</li>
+                                    </ul>
+                                    <p><strong>5. Empfänger der Daten</strong></p>
+                                    <p>Ihre Daten werden an Google Firebase übertragen und dort gespeichert. Firebase ist ein Dienst von Google und speichert die Daten gemäß den Datenschutzbestimmungen von Google. Weitere Empfänger der Daten sind nicht vorgesehen.</p>
+                                    <p><strong>6. Speicherdauer der Daten</strong></p>
+                                    <p>Die Daten werden so lange gespeichert, wie es für den Zweck der App notwendig ist. Google Firebase speichert Daten in der Regel so lange, wie der Dienst genutzt wird.</p>
+                                    <p><strong>7. Ihre Rechte</strong></p>
+                                    <p>Sie haben jederzeit das Recht, auf die bei uns gespeicherten Daten zuzugreifen, diese zu berichtigen oder zu löschen. Ebenso können Sie die Verarbeitung Ihrer Daten einschränken oder der Verarbeitung widersprechen.</p>
+                                    <p><strong>8. Google Analytics</strong></p>
+                                    <p>Unsere App verwendet Google Analytics, einen Webanalysedienst von Google LLC. Google Analytics verwendet Cookies, die auf Ihrem Endgerät gespeichert werden und eine Analyse der Nutzung der App ermöglichen.</p>
+                                </div>
+                            )}
+                        </div>
+                     </div>
+                </div>
+            );
+        };
 
-            const [touchStart, setTouchStart] = useState(null);
-            const [touchEnd, setTouchEnd] = useState(null);
-            const [isSwiped, setIsSwiped] = useState(false);
-            const minSwipeDistance = 50;
+        const UserSettingsModal = ({ user, onClose, onLogout, onShowLegal }) => {
+            const [resetLoading, setResetLoading] = useState(false);
+            const [resetFeedback, setResetFeedback] = useState(null);
+            const [newName, setNewName] = useState(user.displayName || '');
+            const [updateNameLoading, setUpdateNameLoading] = useState(false);
 
-            const onTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); }
-            const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-            const onTouchEnd = () => {
-                if (!touchStart || !touchEnd) return;
-                const distance = touchStart - touchEnd;
-                const isLeftSwipe = distance > minSwipeDistance;
-                const isRightSwipe = distance < -minSwipeDistance;
-                if (isLeftSwipe && canManage) setIsSwiped(true);
-                if (isRightSwipe) setIsSwiped(false);
-            }
-            const handleDeleteSwipe = (e) => { e.stopPropagation(); if(window.confirm("Wirklich löschen?")) onDelete(item.id); else setIsSwiped(false); }
+            const handleUpdateName = async () => {
+                if (!newName.trim()) return;
+                setUpdateNameLoading(true);
+                try {
+                    await updateProfile(user, { displayName: newName });
+                    alert("Name erfolgreich aktualisiert!");
+                    window.location.reload(); // Simple reload to reflect changes globally
+                } catch(e) {
+                    console.error(e);
+                    alert("Fehler beim Aktualisieren des Namens.");
+                } finally {
+                    setUpdateNameLoading(false);
+                }
+            };
 
-            const handleGuestAction = (e, action) => {
-                e.stopPropagation();
-                action();
+            const handleResetPassword = async () => {
+                if (!user.email) return;
+                setResetLoading(true);
+                setResetFeedback(null);
+                try {
+                    await sendPasswordResetEmail(auth, user.email);
+                    setResetFeedback({ type: 'success', msg: `E-Mail zum Zurücksetzen wurde an ${user.email} gesendet. Bitte Posteingang prüfen!` });
+                } catch (e) {
+                    console.error(e);
+                    let msg = "Fehler beim Senden.";
+                    if (e.code === 'auth/user-not-found') msg = "Benutzer nicht gefunden.";
+                    if (e.code === 'auth/invalid-email') msg = "Ungültige E-Mail-Adresse.";
+                    if (e.code === 'auth/too-many-requests') msg = "Zu viele Versuche. Bitte später erneut probieren.";
+                    setResetFeedback({ type: 'error', msg: msg });
+                } finally {
+                    setResetLoading(false);
+                }
+            };
+
+            const handleDeleteAccount = async () => {
+                if (!confirm("Möchtest du dein Konto wirklich unwiderruflich löschen? Alle deine Listen und Daten gehen verloren.")) return;
+                try {
+                    await deleteUser(user);
+                    alert("Konto gelöscht.");
+                } catch (e) {
+                    console.error(e);
+                    if (e.code === 'auth/requires-recent-login') {
+                        alert("Sicherheitsmaßnahme: Bitte logge dich erneut ein und versuche es dann sofort wieder.");
+                        onLogout();
+                    } else {
+                        alert("Fehler beim Löschen des Kontos.");
+                    }
+                }
             };
 
             return (
-                <div className="relative overflow-hidden rounded-xl mb-3 group" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-                    <div className={`absolute inset-0 bg-red-500 flex items-center justify-end px-8 transition-all duration-300 ${isSwiped ? 'opacity-100' : 'opacity-0'}`} onClick={handleDeleteSwipe}>
-                        <span className="text-white font-bold flex items-center justify-center"><Trash2 size={24} /></span>
-                    </div>
-                    <div onClick={() => onSelect(item)} className={`bg-white border rounded-xl overflow-hidden transition-transform duration-300 shadow-sm relative z-10 cursor-pointer active:scale-[0.98] ${isSwiped ? '-translate-x-24' : 'translate-x-0'} ${item.isSecret ? 'border-amber-200 bg-amber-50/50' : item.isBought ? 'border-emerald-200 bg-emerald-50/40' : isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'}`}>
-                        {item.image && (
-                            <div className="h-32 w-full overflow-hidden relative group">
-                                <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
-                                {displayPrice && <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">{displayPrice}</span>}
-                            </div>
-                        )}
-                        <div className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex-1">
-                                    <div className="flex flex-wrap gap-2 mb-1">
-                                        <PriorityBadge priority={item.priority} />
-                                        <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><CategoryIcon size={10} /> {getCategoryLabel(item.category)}</span>
-                                        {item.isSecret && <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded"><Sparkles size={10} /> Überraschung</span>}
-                                        {isGroupMode && <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded"><PieChart size={10} /> Sammelgeschenk</span>}
-                                        {item.isBought && <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded"><ShoppingBag size={10} /> Bereits Gekauft</span>}
-                                    </div>
-                                    <h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved && currentMode === 'guest' && !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}>{item.title}</h3>
-                                    <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">{!item.image && displayPrice && <span>{displayPrice}</span>}</div>
-                                </div>
-                                {canManage && (
-                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                        <button onClick={() => onEdit(item)} className="text-slate-300 hover:text-indigo-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Bearbeiten"><Pencil size={16} /></button>
-                                        <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Löschen"><Trash2 size={16} /></button>
-                                    </div>
-                                )}
-                            </div>
-                            {currentMode === 'guest' && (
-                                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
-                                {isGroupMode ? (
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="text-sm flex-1 text-blue-600 flex gap-1 items-center"><Users size={12} /> <span>{contributorCount}</span></div>
-                                        <div className="flex gap-2">
-                                            {isContributer && <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}><ShoppingBag size={16} /></button>}
-                                            <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${isContributer ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'}`}>{isContributer ? 'Verlassen' : 'Beteiligen'}</button>
-                                        </div>
-                                    </div>
-                                ) : isReserved ? (
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2 text-sm text-slate-500"><span className={`w-2 h-2 rounded-full ${item.isBought ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>{item.isBought ? 'Gekauft' : 'Reserviert'} von {isReservedByMe ? 'Dir' : item.reservedBy.name}</div>
-                                        {isReservedByMe && (
-                                            <div className="flex gap-2">
-                                                <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}><ShoppingBag size={16} /></button>
-                                                <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200">Freigeben</button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Settings size={20} /> Einstellungen</h2>
+                        
+                        <div className="space-y-4">
+                            {!user.isAnonymous && (
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase text-slate-400">Dein Name</label>
                                     <div className="flex gap-2">
-                                        <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"><CheckCircle size={14} /> Reservieren</button>
-                                        <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"><PieChart size={14} /> Sammeln</button>
+                                        <input 
+                                            value={newName} 
+                                            onChange={e => setNewName(e.target.value)} 
+                                            placeholder="Wie möchtest du heißen?"
+                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                        />
+                                        <button 
+                                            onClick={handleUpdateName}
+                                            disabled={updateNameLoading || !newName.trim() || newName === user.displayName}
+                                            className="bg-indigo-600 text-white px-3 py-2 rounded-lg disabled:opacity-50 disabled:bg-slate-200"
+                                        >
+                                            {updateNameLoading ? <Loader2 size={16} className="animate-spin"/> : <Save size={16}/>}
+                                        </button>
                                     </div>
-                                )}
+                                    <div className="text-xs text-slate-400 px-1">Angemeldet als: {user.email}</div>
                                 </div>
+                            )}
+
+                            {!user.isAnonymous && (
+                                <div className="space-y-2 pt-2 border-t border-slate-100">
+                                    <button 
+                                        onClick={handleResetPassword} 
+                                        disabled={resetLoading || (resetFeedback?.type === 'success')}
+                                        className={`w-full py-3 rounded-xl border border-slate-200 font-bold hover:bg-slate-50 flex items-center justify-center gap-2 disabled:opacity-50 transition-colors ${resetFeedback?.type === 'success' ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-50' : 'text-slate-700'}`}
+                                    >
+                                        {resetLoading ? <Loader2 size={16} className="animate-spin" /> : (resetFeedback?.type === 'success' ? <Check size={16} /> : <Key size={16} />)}
+                                        {resetFeedback?.type === 'success' ? 'Gesendet' : 'Passwort ändern'}
+                                    </button>
+                                    
+                                    {resetFeedback && (
+                                        <div className={`text-xs p-2 rounded-lg text-center ${resetFeedback.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                            {resetFeedback.msg}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="border-t border-slate-100 my-2"></div>
+
+                            <button onClick={() => onShowLegal('imprint')} className="w-full py-2 text-left text-sm text-slate-500 hover:text-indigo-600 flex items-center justify-between group">
+                                Impressum <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-600" />
+                            </button>
+                            <button onClick={() => onShowLegal('privacy')} className="w-full py-2 text-left text-sm text-slate-500 hover:text-indigo-600 flex items-center justify-between group">
+                                Datenschutz <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-600" />
+                            </button>
+
+                            <div className="border-t border-slate-100 my-2"></div>
+
+                            <button onClick={onLogout} className="w-full py-3 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 flex items-center justify-center gap-2">
+                                <LogOut size={16} /> Abmelden
+                            </button>
+
+                            {!user.isAnonymous && (
+                                <button onClick={handleDeleteAccount} className="w-full py-2 text-xs text-red-400 hover:text-red-600 mt-2">
+                                    Konto unwiderruflich löschen
+                                </button>
                             )}
                         </div>
                     </div>
@@ -285,7 +363,10 @@
             const [date, setDate] = useState(listData.eventDate || '');
             const [currency, setCurrency] = useState(listData.currency || '€');
 
-            const handleSave = () => { onSave({ title, eventDate: date, currency }); onClose(); };
+            const handleSave = () => {
+                onSave({ title, eventDate: date, currency });
+                onClose();
+            };
 
             return (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -313,7 +394,14 @@
         const ContributionModal = ({ item, currentUserUid, onClose, onConfirm, currencySymbol }) => {
             const myContribution = item.contributors?.find(c => c.uid === currentUserUid);
             const [amount, setAmount] = useState(myContribution?.amount || '');
-            const handleSubmit = () => { const val = parseFloat(amount); if (isNaN(val) || val < 0) return alert("Bitte einen gültigen Betrag eingeben"); onConfirm(item, val); onClose(); };
+            
+            const handleSubmit = () => {
+                const val = parseFloat(amount);
+                if (isNaN(val) || val < 0) return alert("Bitte einen gültigen Betrag eingeben");
+                onConfirm(item, val);
+                onClose();
+            };
+
             const targetPrice = parsePrice(item.price);
             const alreadyCollected = (item.contributors || []).reduce((acc, c) => acc + (c.amount || 0), 0) - (myContribution?.amount || 0);
             const missing = Math.max(0, targetPrice - alreadyCollected);
@@ -325,7 +413,10 @@
                         <h2 className="text-lg font-bold mb-1">Sammelgeschenk</h2>
                         <p className="text-sm text-slate-500 mb-4">{item.title}</p>
                         <div className="space-y-4">
-                            <div><label className="block text-xs font-bold uppercase text-slate-400 mb-1">Dein Beitrag ({currencySymbol})</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg font-bold text-center" placeholder="0.00" autoFocus /></div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">Dein Beitrag ({currencySymbol})</label>
+                                <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg font-bold text-center" placeholder="0.00" autoFocus />
+                            </div>
                             {targetPrice > 0 && <div className="text-xs text-center text-slate-500 bg-slate-50 p-2 rounded-lg">Offen: <strong>{missing.toFixed(2)} {currencySymbol}</strong></div>}
                             <button onClick={handleSubmit} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">{myContribution ? 'Aktualisieren' : 'Beteiligen'}</button>
                             {myContribution && <button onClick={() => { onConfirm(item, 0); onClose(); }} className="w-full text-red-500 text-sm hover:underline">Verlassen (Beitrag löschen)</button>}
@@ -342,7 +433,9 @@
             const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
             const isReservedByMe = item.reservedBy?.uid === currentUserUid;
             const isReserved = !!item.reservedBy;
+            
             const CategoryIcon = getCategoryIcon(item.category);
+
             const targetPrice = parsePrice(item.price);
             const totalCollected = (item.contributors || []).reduce((acc, c) => acc + (c.amount || 0), 0);
             const progress = targetPrice > 0 ? Math.min(100, (totalCollected / targetPrice) * 100) : 0;
@@ -413,6 +506,111 @@
                                             <button onClick={() => onOpenContribution(item)} className="bg-white border border-blue-200 text-blue-600 py-3 rounded-xl font-bold hover:bg-blue-50 transition-colors flex flex-col items-center justify-center gap-1"><PieChart size={20} /><span>Sammeln</span></button>
                                         </div>
                                     )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const WishListItem = ({ item, currentMode, currentUserUid, guestName, onDelete, onEdit, onSelect, onToggleReservation, onToggleBought, onOpenContribution, currencySymbol }) => {
+            const isContributer = item.contributors?.some(c => c.uid === currentUserUid);
+            const contributorCount = item.contributors?.length || 0;
+            const isGroupMode = (item.contributors && item.contributors.length > 0) || item.isGroupGift;
+            const isReservedByMe = item.reservedBy?.uid === currentUserUid;
+            const isReserved = !!item.reservedBy;
+            const isFullyReserved = isReserved && !isGroupMode;
+            const CategoryIcon = getCategoryIcon(item.category);
+            const isMySecretGift = currentMode === 'guest' && item.isSecret && (item.addedByUid === currentUserUid);
+            const canManage = currentMode === 'owner' || isMySecretGift;
+            const targetPrice = parsePrice(item.price);
+            const totalCollected = (item.contributors || []).reduce((acc, c) => acc + (c.amount || 0), 0);
+            const progress = targetPrice > 0 ? Math.min(100, (totalCollected / targetPrice) * 100) : 0;
+
+            const [touchStart, setTouchStart] = useState(null);
+            const [touchEnd, setTouchEnd] = useState(null);
+            const [isSwiped, setIsSwiped] = useState(false);
+            const minSwipeDistance = 50;
+
+            const onTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); }
+            const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+            const onTouchEnd = () => {
+                if (!touchStart || !touchEnd) return;
+                const distance = touchStart - touchEnd;
+                const isLeftSwipe = distance > minSwipeDistance;
+                const isRightSwipe = distance < -minSwipeDistance;
+                if (isLeftSwipe && canManage) setIsSwiped(true);
+                if (isRightSwipe) setIsSwiped(false);
+            }
+            const handleDeleteSwipe = (e) => { e.stopPropagation(); if(window.confirm("Wirklich löschen?")) onDelete(item.id); else setIsSwiped(false); }
+
+            const displayPrice = item.price ? (parsePrice(item.price) > 0 ? `${item.price} ${currencySymbol}` : item.price) : '';
+
+            const handleGuestAction = (e, action) => {
+                e.stopPropagation();
+                action();
+            };
+
+            return (
+                <div className="relative overflow-hidden rounded-xl mb-3 group" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+                    <div className={`absolute inset-0 bg-red-500 flex items-center justify-end px-8 transition-all duration-300 ${isSwiped ? 'opacity-100' : 'opacity-0'}`} onClick={handleDeleteSwipe}>
+                        <span className="text-white font-bold flex items-center justify-center"><Trash2 size={24} /></span>
+                    </div>
+                    <div onClick={() => onSelect(item)} className={`bg-white border rounded-xl overflow-hidden transition-transform duration-300 shadow-sm relative z-10 cursor-pointer active:scale-[0.98] ${isSwiped ? '-translate-x-24' : 'translate-x-0'} ${item.isSecret ? 'border-amber-200 bg-amber-50/50' : item.isBought ? 'border-emerald-200 bg-emerald-50/40' : isGroupMode ? 'border-blue-200 bg-blue-50/30' : 'border-slate-100'}`}>
+                        {item.image && (
+                            <div className="h-32 w-full overflow-hidden relative group">
+                                <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={(e) => e.target.style.display = 'none'} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                                {displayPrice && <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">{displayPrice}</span>}
+                            </div>
+                        )}
+                        <div className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                    <div className="flex flex-wrap gap-2 mb-1">
+                                        <PriorityBadge priority={item.priority} />
+                                        <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"><CategoryIcon size={10} /> {getCategoryLabel(item.category)}</span>
+                                        {item.isSecret && <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1 bg-amber-100 px-1.5 py-0.5 rounded"><Sparkles size={10} /> Überraschung</span>}
+                                        {isGroupMode && <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1 bg-blue-100 px-1.5 py-0.5 rounded"><PieChart size={10} /> Sammelgeschenk</span>}
+                                        {item.isBought && <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1 bg-emerald-100 px-1.5 py-0.5 rounded"><ShoppingBag size={10} /> Bereits Gekauft</span>}
+                                    </div>
+                                    <h3 className={`font-semibold text-lg ${item.isBought || (isFullyReserved && currentMode === 'guest' && !isReservedByMe) ? 'line-through text-slate-400' : 'text-slate-800'}`}>{item.title}</h3>
+                                    <div className="text-sm text-slate-500 mt-1 flex gap-3 flex-wrap">{!item.image && displayPrice && <span>{displayPrice}</span>}</div>
+                                </div>
+                                {canManage && (
+                                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                                        <button onClick={() => onEdit(item)} className="text-slate-300 hover:text-indigo-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Bearbeiten"><Pencil size={16} /></button>
+                                        <button onClick={() => onDelete(item.id)} className="text-slate-300 hover:text-red-500 p-2 hover:bg-slate-50 rounded-lg transition-colors" title="Löschen"><Trash2 size={16} /></button>
+                                    </div>
+                                )}
+                            </div>
+                            {currentMode === 'guest' && (
+                                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-2">
+                                {isGroupMode ? (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="text-sm flex-1 text-blue-600 flex gap-1 items-center"><Users size={12} /> <span>{contributorCount}</span></div>
+                                        <div className="flex gap-2">
+                                            {isContributer && <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg transition-colors ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600'}`}><ShoppingBag size={16} /></button>}
+                                            <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${isContributer ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200'}`}>{isContributer ? 'Verlassen' : 'Beteiligen'}</button>
+                                        </div>
+                                    </div>
+                                ) : isReserved ? (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 text-sm text-slate-500"><span className={`w-2 h-2 rounded-full ${item.isBought ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>{item.isBought ? 'Gekauft' : 'Reserviert'} von {isReservedByMe ? 'Dir' : item.reservedBy.name}</div>
+                                        {isReservedByMe && (
+                                            <div className="flex gap-2">
+                                                <button onClick={(e) => handleGuestAction(e, () => onToggleBought(item))} className={`p-2 rounded-lg ${item.isBought ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}><ShoppingBag size={16} /></button>
+                                                <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200">Freigeben</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <button onClick={(e) => handleGuestAction(e, () => onToggleReservation(item, 'single'))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200 flex items-center justify-center gap-2"><CheckCircle size={14} /> Reservieren</button>
+                                        <button onClick={(e) => handleGuestAction(e, () => onOpenContribution(item))} className="flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 flex items-center justify-center gap-2"><PieChart size={14} /> Sammeln</button>
+                                    </div>
+                                )}
                                 </div>
                             )}
                         </div>
@@ -525,33 +723,86 @@
             );
         };
 
-        const AuthModal = ({ isOpen, onClose, onLogin, onRegister }) => {
+        const AuthModal = ({ isOpen, onClose, onLogin, onRegister, startWithRegister = false }) => {
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
-            const [isRegister, setIsRegister] = useState(false);
+            const [name, setName] = useState(''); // NEW STATE FOR NAME
+            const [isRegister, setIsRegister] = useState(startWithRegister);
             const [error, setError] = useState(null); 
             const [verificationSent, setVerificationSent] = useState(false);
-            useEffect(() => { if (isOpen) { setVerificationSent(false); setError(null); } }, [isOpen]);
+
+            useEffect(() => {
+                if (isOpen) {
+                    setIsRegister(startWithRegister);
+                    setVerificationSent(false);
+                    setError(null);
+                    setName(''); // Reset name
+                }
+            }, [isOpen, startWithRegister]);
+
             if (!isOpen) return null;
+            
             const handleSubmit = async (e) => {
                 e.preventDefault(); setError(null);
                 try {
-                if (isRegister) { const userCredential = await onRegister(email, password); await sendEmailVerification(userCredential.user); await signOut(auth); setVerificationSent(true); } 
-                else { const userCredential = await onLogin(email, password); if (!userCredential.user.emailVerified) { await signOut(auth); setError({ msg: "Bitte bestätige erst deine E-Mail-Adresse!", code: 'auth/unverified-email' }); return; } onClose(); }
-                } catch (err) { let msg = `Fehler: ${err.message}`; if (err.code === 'auth/invalid-credential') msg = "E-Mail oder Passwort falsch."; setError({ msg, code: err.code }); }
+                    if (isRegister) { 
+                        // REGISTER WITH NAME UPDATE
+                        const userCredential = await onRegister(email, password);
+                        if (name.trim()) {
+                            await updateProfile(userCredential.user, { displayName: name });
+                        }
+                        await sendEmailVerification(userCredential.user); 
+                        await signOut(auth); 
+                        setVerificationSent(true); 
+                    } else { 
+                        const userCredential = await onLogin(email, password); 
+                        if (!userCredential.user.emailVerified) { 
+                            await signOut(auth); 
+                            setError({ msg: "Bitte bestätige erst deine E-Mail-Adresse!", code: 'auth/unverified-email' }); 
+                            return; 
+                        } 
+                        onClose(); 
+                    }
+                } catch (err) { 
+                    let msg = `Fehler: ${err.message}`; 
+                    if (err.code === 'auth/invalid-credential') msg = "E-Mail oder Passwort falsch."; 
+                    setError({ msg, code: err.code }); 
+                }
             };
+
             if (verificationSent) return (<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200"><div className="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl text-center"><div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><Mail size={32} /></div><h2 className="text-2xl font-bold mb-2 text-slate-800">Fast geschafft!</h2><p className="text-slate-600 mb-6">Wir haben eine Bestätigungs-E-Mail an <strong>{email}</strong> gesendet. Bitte klicke auf den Link darin.</p><button onClick={() => { setVerificationSent(false); setIsRegister(false); }} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors">Zurück zum Login</button></div></div>);
+            
             return (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
                 <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl relative">
                     <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">✕</button>
                     <h2 className="text-xl font-bold mb-1">{isRegister ? 'Konto erstellen' : 'Anmelden'}</h2>
-                    <p className="text-slate-500 text-sm mb-4">{isRegister ? 'Zum dauerhaften Speichern deiner Listen.' : 'Willkommen zurück!'}</p>
+                    
+                    {isRegister ? (
+                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 my-3 text-sm text-indigo-900">
+                            <p className="font-bold mb-1 flex items-center gap-1"><Star size={14} className="fill-indigo-600 text-indigo-600"/> Deine Vorteile:</p>
+                            <ul className="list-disc list-inside space-y-0.5 opacity-90 text-xs">
+                                <li>Listen dauerhaft speichern & sichern</li>
+                                <li>Zugriff von allen deinen Geräten</li>
+                                <li>Verwalte deine Wünsche jederzeit</li>
+                            </ul>
+                        </div>
+                    ) : (
+                        <p className="text-slate-500 text-sm mb-4">Willkommen zurück!</p>
+                    )}
+
                     {error && <div className="bg-red-50 border border-red-100 text-red-600 text-xs p-3 rounded-lg mb-4 font-bold">{error.msg}</div>}
                     <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="relative"><Mail className="absolute left-3 top-3 text-slate-400" size={16} /><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-Mail Adresse" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required /></div>
-                    <div className="relative"><Key className="absolute left-3 top-3 text-slate-400" size={16} /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passwort" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required minLength={6} /></div>
-                    <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200">{isRegister ? 'Kostenlos registrieren' : 'Einloggen'}</button>
+                        {/* NAME INPUT FOR REGISTER ONLY */}
+                        {isRegister && (
+                            <div className="relative">
+                                <User className="absolute left-3 top-3 text-slate-400" size={16} />
+                                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Dein Vorname" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                            </div>
+                        )}
+                        <div className="relative"><Mail className="absolute left-3 top-3 text-slate-400" size={16} /><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-Mail Adresse" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required /></div>
+                        <div className="relative"><Key className="absolute left-3 top-3 text-slate-400" size={16} /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Passwort" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required minLength={6} /></div>
+                        <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200">{isRegister ? 'Kostenlos registrieren' : 'Einloggen'}</button>
                     </form>
                     <div className="mt-4 text-center text-sm text-slate-500">{isRegister ? 'Schon ein Konto?' : 'Noch kein Konto?'} <button onClick={() => setIsRegister(!isRegister)} className="ml-1 text-indigo-600 font-semibold hover:underline">{isRegister ? 'Hier einloggen' : 'Jetzt registrieren'} </button></div>
                 </div>
@@ -571,19 +822,31 @@
             );
         }
 
-        function LandingPage({ onCreate, onJoin, user, onLogin, onRegister, onLogout, myLists, joinedLists, onOpenList, onDeleteList }) { 
+        function LandingPage({ onCreate, onJoin, user, onLogin, onRegister, onLogout, myLists, joinedLists, onOpenList, onDeleteList, onShowLegal, onOpenSettings }) { 
             const [title, setTitle] = useState('');
             const [date, setDate] = useState('');
             const [joinId, setJoinId] = useState('');
             const [showAuthModal, setShowAuthModal] = useState(false);
             const [showJoinInput, setShowJoinInput] = useState(false);
+            const [authStartRegister, setAuthStartRegister] = useState(false);
+
+            const openLogin = () => { setAuthStartRegister(false); setShowAuthModal(true); };
+            const openRegister = () => { setAuthStartRegister(true); setShowAuthModal(true); };
+
+            // DISPLAY NAME IN HEADER
+            const displayName = user?.displayName || user?.email || 'Gast';
 
             return (
                 <div className="flex flex-col min-h-screen bg-slate-50 relative">
-                <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLogin={onLogin} onRegister={onRegister} />
+                <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onLogin={onLogin} onRegister={onRegister} startWithRegister={authStartRegister} />
                 <div className="bg-white/80 backdrop-blur sticky top-0 z-20 border-b border-slate-200 p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2"><div className="bg-indigo-600 p-1.5 rounded-lg text-white"><Gift size={18} /></div><h1 className="font-bold text-slate-800 tracking-tight">WunschWelle</h1></div>
-                    {!user || user.isAnonymous ? (<button onClick={() => setShowAuthModal(true)} className="text-sm font-medium text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors">Anmelden</button>) : (<div className="flex items-center gap-2"><span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span><button onClick={onLogout} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><LogOut size={16} /></button></div>)}
+                    <div className="flex items-center gap-2"><div className="bg-indigo-600 p-1.5 rounded-lg text-white"><Gift size={18} /></div><h1 className="font-bold text-slate-800 tracking-tight">Wishlet</h1></div>
+                    {!user || user.isAnonymous ? (<button onClick={openLogin} className="text-sm font-medium text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-lg transition-colors">Anmelden</button>) : (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500 hidden sm:inline">Hallo, {displayName}</span>
+                            <button onClick={onOpenSettings} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full"><Settings size={16} /></button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex-1 p-4 max-w-md mx-auto w-full flex flex-col">
@@ -594,6 +857,16 @@
                         <div><label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Titel</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="z.B. Mein Geburtstag" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" /></div>
                         <div><label className="block text-xs font-bold uppercase text-slate-400 mb-1 tracking-wider">Wann?</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-slate-50 focus:bg-white" /></div>
                         <button disabled={!title} onClick={() => onCreate(title, date)} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"><Plus size={20} /> Liste starten</button>
+                        
+                        {/* HINT FOR ANONYMOUS USERS */}
+                        {user && user.isAnonymous && (
+                            <div className="mt-4 pt-4 border-t border-slate-100 text-center">
+                                <p className="text-xs text-slate-500 mb-2">Um deine Listen dauerhaft zu sichern:</p>
+                                <button onClick={openRegister} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-full transition-colors flex items-center justify-center gap-1 mx-auto">
+                                    <ShieldCheck size={12} /> Konto erstellen
+                                </button>
+                            </div>
+                        )}
                     </div>
                     </div>
 
@@ -629,12 +902,18 @@
                     <div className="mt-auto pt-8 text-center pb-8">
                     {!showJoinInput ? (<button onClick={() => setShowJoinInput(true)} className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1 mx-auto transition-colors"><Search size={14} /> Code eingeben?</button>) : (<div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2"><input type="text" value={joinId} onChange={(e) => setJoinId(e.target.value)} placeholder="Code..." className="flex-1 px-4 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-indigo-500 bg-white text-slate-800 shadow-sm" autoFocus /><button disabled={!joinId} onClick={() => onJoin(joinId.trim(), "")} className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-900 disabled:opacity-50"><ArrowRight size={16} /></button></div>)}
                     </div>
+                    
+                    {/* LEGAL FOOTER */}
+                    <div className="mt-8 text-center text-xs text-slate-400 pb-4">
+                        <button onClick={() => onShowLegal('imprint')} className="hover:underline">Impressum</button>
+                        <span className="mx-2">•</span>
+                        <button onClick={() => onShowLegal('privacy')} className="hover:underline">Datenschutz</button>
+                    </div>
                 </div>
                 </div>
             );
         }
 
-        // MAIN COMPONENT DEFINITION BEFORE USE
         function WishListDashboard({ listData, mode, guestName, onBack, user }) {
             const [items, setItems] = useState([]);
             const [messages, setMessages] = useState([]);
@@ -744,13 +1023,23 @@
             const [guestName, setGuestName] = useState(() => { try { return localStorage.getItem('wishlist_guest_name') || '' } catch(e) { return '' } });
             const [userLists, setUserLists] = useState([]);
             const [joinedLists, setJoinedLists] = useState([]);
+            const [legalView, setLegalView] = useState(null); // 'imprint' or 'privacy'
+            const [showUserSettings, setShowUserSettings] = useState(false);
 
             useEffect(() => { try { localStorage.setItem('wishlist_guest_name', guestName); } catch(e) {} }, [guestName]);
 
             useEffect(() => {
                 const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-                    if (currentUser) { setUser(currentUser); } 
-                    else { try { const anon = await signInAnonymously(auth); setUser(anon.user); } catch(e) { console.error("Anon Auth Failed", e); } }
+                    if (currentUser) { 
+                        setUser(currentUser); 
+                        // Auto-Sync guest name with display name on login
+                        if (currentUser.displayName) {
+                            setGuestName(currentUser.displayName);
+                        }
+                    } else { 
+                        try { const anon = await signInAnonymously(auth); setUser(anon.user); } 
+                        catch(e) { console.error("Anon Auth Failed", e); } 
+                    }
                     setAuthInitialized(true);
                 });
                 return () => unsubscribe();
@@ -789,7 +1078,11 @@
 
             const handleEmailLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
             const handleRegister = (email, password) => createUserWithEmailAndPassword(auth, email, password);
-            const handleLogout = async () => { await signOut(auth); window.location.href = window.location.pathname; };
+            const handleLogout = async () => { 
+                await signOut(auth); 
+                window.location.href = window.location.pathname; 
+                setShowUserSettings(false);
+            };
 
             const handleCreateList = async (title, date) => {
                 if (!user) return;
@@ -819,22 +1112,43 @@
             const handleOpenList = (list) => { setActiveListData(list); safeUpdateURL(list.id); };
             const handleDeleteList = async (listId) => { if (!confirm("Möchtest du diese Liste wirklich löschen?")) return; try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lists', listId)); if (activeListData?.id === listId) { setActiveListData(null); safeUpdateURL(''); } } catch (e) { console.error("Delete List Error:", e); alert("Fehler beim Löschen."); } };
 
-            if (!authInitialized) return <div className="h-screen flex items-center justify-center text-slate-400">Lade WunschWelle...</div>;
+            if (!authInitialized) return <div className="h-screen flex items-center justify-center text-slate-400">Lade Wishlet...</div>;
 
-            if (!activeListData) {
-                return ( <LandingPage onCreate={handleCreateList} onJoin={handleJoinList} user={user} onLogin={handleEmailLogin} onRegister={handleRegister} onLogout={handleLogout} myLists={userLists} joinedLists={joinedLists} onOpenList={handleOpenList} onDeleteList={handleDeleteList} /> );
-            }
-
-            const isOwner = user && user.uid === activeListData.ownerId;
-            if (isOwner) { return <WishListDashboard listData={activeListData} mode="owner" guestName="" user={user} onBack={() => { setActiveListData(null); safeUpdateURL(''); }} />; }
-            if (guestName) { 
-                if (user && !activeListData.guestUids?.includes(user.uid)) {
-                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', activeListData.id);
-                     updateDoc(docRef, { guestUids: arrayUnion(user.uid) }).catch(console.error);
-                }
-                return <WishListDashboard listData={activeListData} mode="guest" guestName={guestName} user={user} onBack={() => { setActiveListData(null); safeUpdateURL(''); }} />; 
-            }
-            return <InviteScreen listData={activeListData} onJoin={handleJoinList} />;
+            return (
+                <>
+                    {!activeListData ? (
+                        <LandingPage 
+                            onCreate={handleCreateList} 
+                            onJoin={handleJoinList} 
+                            user={user} 
+                            onLogin={handleEmailLogin} 
+                            onRegister={handleRegister} 
+                            onLogout={handleLogout} 
+                            myLists={userLists} 
+                            joinedLists={joinedLists} 
+                            onOpenList={handleOpenList} 
+                            onDeleteList={handleDeleteList} 
+                            onShowLegal={setLegalView}
+                            onOpenSettings={() => setShowUserSettings(true)}
+                        />
+                    ) : (
+                        (() => {
+                            const isOwner = user && user.uid === activeListData.ownerId;
+                            if (isOwner) { return <WishListDashboard listData={activeListData} mode="owner" guestName="" user={user} onBack={() => { setActiveListData(null); safeUpdateURL(''); }} />; }
+                            if (guestName) { 
+                                if (user && !activeListData.guestUids?.includes(user.uid)) {
+                                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'lists', activeListData.id);
+                                     updateDoc(docRef, { guestUids: arrayUnion(user.uid) }).catch(console.error);
+                                }
+                                return <WishListDashboard listData={activeListData} mode="guest" guestName={guestName} user={user} onBack={() => { setActiveListData(null); safeUpdateURL(''); }} />; 
+                            }
+                            return <InviteScreen listData={activeListData} onJoin={handleJoinList} />;
+                        })()
+                    )}
+                    {legalView && <LegalModal type={legalView} onClose={() => setLegalView(null)} />}
+                    {showUserSettings && user && <UserSettingsModal user={user} onClose={() => setShowUserSettings(false)} onLogout={handleLogout} onShowLegal={setLegalView} />}
+                </>
+            );
         }
 
         const root = createRoot(document.getElementById('root'));
